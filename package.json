@@ -1,0 +1,49 @@
+{
+  "name": "gc-open-social-bluesky",
+  "version": "1.0.0",
+  "description": "Bluesky to Genesys Cloud middleware",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "lint": "eslint . --ext .ts",
+    "prettier": "prettier --write ."
+  },
+  "keywords": [
+    "genesys-cloud",
+    "bluesky",
+    "social-media",
+    "middleware"
+  ],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maindsolutions/GC-Open-Social---Bluesky.git"
+  },
+  "bugs": {
+    "url": "https://github.com/maindsolutions/GC-Open-Social---Bluesky/issues"
+  },
+  "homepage": "https://github.com/maindsolutions/GC-Open-Social---Bluesky#readme",
+  "dependencies": {
+    "@atproto/api": "^0.15.12",
+    "@upstash/redis": "^1.35.0",
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.2",
+    "@types/node": "^22.15.30",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
+    "eslint": "^9.28.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.1",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
