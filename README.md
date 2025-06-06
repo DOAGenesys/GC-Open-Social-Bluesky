@@ -22,7 +22,7 @@ The middleware consists of the following components:
 1.  **Bluesky API Client:** Uses the `@atproto/api` SDK to interact with the Bluesky network.
 2.  **Genesys Cloud API Client:** Makes raw HTTP requests to the Genesys Cloud API using `axios`.
 3.  **Webhook Server:** A secure endpoint to receive outbound messages and events from Genesys Cloud.
-4.  **State Management:** A Redis database (Upstash) to maintain conversation state and mappings between Bluesky and Genesys Cloud entities.
+4.  **State Management:** A Redis database (Upstash, for example, which has a free tier available) to maintain conversation state and mappings between Bluesky and Genesys Cloud entities.
 5.  **Main Application Logic:** The core processing engine that handles data transformation, routing, and business logic.
 
 ## The Critical Role of the Database
