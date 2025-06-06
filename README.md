@@ -133,6 +133,8 @@ The following environment variables are required for the application to function
 | `REDIS_URL` | The connection URL for the Upstash Redis database. | `redis://...` |
 | `REDIS_TOKEN` | The authentication token for the Upstash Redis database. | `your-redis-token` |
 | `LOG_LEVEL` | The logging level for the application (`debug`, `info`, `warn`, `error`). | `info` |
+| `POLLING_TIME_SOCIAL_LISTENING` | The polling interval in seconds for social listening. Defaults to 300 (5 minutes). | `300` |
+| `POLLING_TIME_INBOUND_NOTIFICATIONS` | The polling interval in seconds for inbound notifications (mentions/replies). Defaults to 60 (1 minute). | `60` |
 
 ## Testing the Integration
 

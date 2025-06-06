@@ -5,7 +5,8 @@ import {AppBskyFeedDefs, AppBskyFeedPost} from "@atproto/api";
 import { ingestMessages, createOrUpdateExternalContact } from '../services/genesys';
 import { logger } from '../services/logger';
 
-const POLLING_INTERVAL_MS = 60000; // 1 minute
+const { POLLING_TIME_INBOUND_NOTIFICATIONS } = process.env;
+const POLLING_INTERVAL_MS = POLLING_TIME_INBOUND_NOTIFICATIONS ? parseInt(POLLING_TIME_INBOUND_NOTIFICATIONS, 10) * 1000 : 60000; // 1 minute default
 
 let lastSeenNotif: string | undefined = undefined;
 

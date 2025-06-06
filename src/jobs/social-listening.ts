@@ -4,8 +4,8 @@ import { blueskyToGenesys } from '../mappers/message';
 import { getConversationState, setConversationState } from '../services/redis';
 import { logger } from '../services/logger';
 
-const POLLING_INTERVAL_MS = 300000; // 5 minutes
-const { BLUESKY_SEARCH_QUERY } = process.env;
+const { POLLING_TIME_SOCIAL_LISTENING, BLUESKY_SEARCH_QUERY } = process.env;
+const POLLING_INTERVAL_MS = POLLING_TIME_SOCIAL_LISTENING ? parseInt(POLLING_TIME_SOCIAL_LISTENING, 10) * 1000 : 300000; // 5 minutes default
 
 let socialListeningCursor: string | undefined = undefined;
 
