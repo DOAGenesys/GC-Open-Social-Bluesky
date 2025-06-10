@@ -129,6 +129,9 @@ export const createOrUpdateExternalContact = async (did: string, displayName: st
     const contact = {
         firstName: displayName,
         lastName: '',
+        division: {
+            id: '*'  // Use wildcard division as seen in Genesys Cloud examples
+        },
         externalIds: [
             {
                 externalSource: 'Bluesky',
@@ -173,6 +176,16 @@ export const createOrUpdateExternalContact = async (did: string, displayName: st
         }
     } catch (error) {
         if (axios.isAxiosError(error)) {
+            const errorData = error.response?.data;
+            
+            // Check for specific error indicating missing external source
+            if (error.response?.status === 400 && 
+                (errorData?.message?.includes('malformed') || errorData?.code === 'bad.request')) {
+                logger.error('Failed to create external contact - this is likely because the "Bluesky" external source does not exist in Genesys Cloud.');
+                logger.error('To fix this: Go to Admin > External Contacts > Add Source and create a source named "Bluesky"');
+                logger.error('See README.md Step 2.4 for detailed instructions.');
+            }
+            
             logger.error('Failed to create or update external contact in Genesys Cloud:', {
                 status: error.response?.status,
                 statusText: error.response?.statusText,
