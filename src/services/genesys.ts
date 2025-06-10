@@ -88,7 +88,7 @@ export const ingestMessages = async (messages: GenesysCloudMessage[]): Promise<a
     }
 }
 
-export const sendDeliveryReceipt = async (messageId: string, blueskyPostUri: string, success: boolean, errorMessage?: string): Promise<any> => {
+export const sendDeliveryReceipt = async (messageId: string, originalChannel: any, blueskyPostUri: string, success: boolean, errorMessage?: string): Promise<any> => {
     const apiClient = getGenesysCloudApiClient();
     const { GC_INTEGRATION_ID } = process.env;
 
@@ -99,6 +99,11 @@ export const sendDeliveryReceipt = async (messageId: string, blueskyPostUri: str
     const receipt = {
         id: messageId,
         channel: {
+            id: originalChannel.id,
+            platform: originalChannel.platform,
+            type: originalChannel.type,
+            to: originalChannel.to,  // Required field that was missing
+            from: originalChannel.from,
             messageId: blueskyPostUri,
             time: new Date().toISOString(),  // Add required date field
         },

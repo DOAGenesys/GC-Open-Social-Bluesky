@@ -49,7 +49,7 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
                 const parentState = await getConversationState(parentUri);
                 if (parentState) {
                     await likePost(parentUri, parentState.cid);
-                    await sendDeliveryReceipt(id, '', true);
+                    await sendDeliveryReceipt(id, channel, '', true);
                 } else {
                     throw new Error('Could not find parent post state to like.');
                 }
@@ -57,18 +57,18 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
                 const parentState = await getConversationState(parentUri);
                 if (parentState) {
                     await repostPost(parentUri, parentState.cid);
-                    await sendDeliveryReceipt(id, '', true);
+                    await sendDeliveryReceipt(id, channel, '', true);
                 } else {
                     throw new Error('Could not find parent post state to repost.');
                 }
             } else {
                 const replyResponse = await postReply(text, parentUri);
-                await sendDeliveryReceipt(id, replyResponse.uri, true);
+                await sendDeliveryReceipt(id, channel, replyResponse.uri, true);
             }
             logger.info('Successfully processed outbound message.');
         } catch (error: any) {
             logger.error('Failed to process outbound command:', error);
-            await sendDeliveryReceipt(id, '', false, error.message);
+            await sendDeliveryReceipt(id, channel, '', false, error.message);
         }
     } else {
         logger.warn('Ignoring message without reply information (no replyToId or inReplyToMessageId found).');
