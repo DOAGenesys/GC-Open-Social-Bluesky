@@ -96,34 +96,47 @@ If an agent sends a message with an attachment from Genesys Cloud, the middlewar
 
 ### 3.4. Direct Messages (Private Messages)
 
-For private messages from Genesys Cloud, the middleware will send direct messages using Bluesky's chat API:
+For private messages from Genesys Cloud, the middleware uses a hybrid approach combining TypeScript and Python:
 
 - The middleware receives a webhook with `channel.type: 'Private'`
 - Extracts the recipient DID from `channel.to.id`
-- Uses raw XRPC calls with proper `atproto-proxy` headers to access the chat service:
+- **Uses Python script for DM functionality**: Since the TypeScript SDK doesn't fully support chat APIs yet, we use a Python script (`src/services/bluesky_dm.py`) that leverages the mature Python `atproto` library
+- The TypeScript service calls the Python script using `child_process.execSync()`
 
+**Python Implementation** (`src/services/bluesky_dm.py`):
+```python
+from atproto import Client
+
+client = Client()
+client.login(username, password)
+
+# Create chat proxy client
+dm_client = client.with_bsky_chat_proxy()
+dm = dm_client.chat.bsky.convo
+
+# Get or create conversation
+convo_response = dm.get_convo_for_members({'members': [recipient_did]})
+convo_id = convo_response.convo.id
+
+# Send the message
+message_response = dm.send_message({
+    'convo_id': convo_id,
+    'message': {'text': message_text}
+})
+```
+
+**TypeScript Integration**:
 ```typescript
-// Get or create conversation
-const convoResponse = await agent.api.call('chat.bsky.convo.getConvoForMembers', { 
-    members: [recipientDid] 
-}, {
-    headers: {
-        'atproto-proxy': 'did:web:api.bsky.chat#bsky_chat'
-    }
-});
-
-// Send the message
-const response = await agent.api.call('chat.bsky.convo.sendMessage', {
-    convoId: convoResponse.data.convo.id,
-    message: { text: messageText }
-}, {
-    headers: {
-        'atproto-proxy': 'did:web:api.bsky.chat#bsky_chat'
-    }
+const result = execSync(`python "${pythonScript}" "${recipientDid}" "${text}"`, {
+    encoding: 'utf8',
+    env: { ...process.env }
 });
 ```
 
-**Important**: Direct messaging requires the App Password to have "Direct Messages" scope enabled when created.
+**Requirements**:
+- Direct messaging requires the App Password to have "Direct Messages" scope enabled
+- Python 3.x with `atproto==0.0.55` library installed (`pip install atproto==0.0.55`)
+- Same environment variables (`BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD`) are used by both TypeScript and Python components
 
 ### 3.5. Likes and Reposts from Agents
 

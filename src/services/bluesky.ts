@@ -126,37 +126,36 @@ export const repostPost = async (uri: string, cid: string): Promise<any> => {
 }
 
 export const sendDirectMessage = async (text: string, recipientDid: string): Promise<any> => {
-    const agent = await getBlueskyAgent();
+    const { execSync } = require('child_process');
+    const path = require('path');
+    
     try {
-        // For chat API, we need to use raw XRPC calls with proper service DID header
-        // Get or create conversation
-        const convoResponse = await agent.api.call('chat.bsky.convo.getConvoForMembers', { 
-            members: [recipientDid] 
-        }, {
-            headers: {
-                'atproto-proxy': 'did:web:api.bsky.chat#bsky_chat'
-            }
-        });
+        // Path to the Python script
+        const pythonScript = path.join(__dirname, 'bluesky_dm.py');
         
-        const convoId = convoResponse.data.convo.id;
-        logger.info(`Using conversation: ${convoId}`);
-
-        // Send the message to the conversation
-        const response = await agent.api.call('chat.bsky.convo.sendMessage', {
-            convoId: convoId,
-            message: {
-                text: text
+        // Execute the Python script with recipient DID and message text as arguments
+        const result = execSync(
+            `python "${pythonScript}" "${recipientDid}" "${text}"`,
+            { 
+                encoding: 'utf8',
+                env: { ...process.env }, // Pass all environment variables
+                timeout: 30000 // 30 second timeout
             }
-        }, {
-            headers: {
-                'atproto-proxy': 'did:web:api.bsky.chat#bsky_chat'
-            }
-        });
-
-        logger.info('Successfully sent direct message to Bluesky:', response.data);
-        return response.data;
+        );
+        
+        // Parse the JSON response from Python
+        const response = JSON.parse(result.trim());
+        
+        if (response.success) {
+            logger.info('Successfully sent direct message to Bluesky via Python:', response);
+            return response;
+        } else {
+            logger.error('Python DM script failed:', response.error);
+            throw new Error(`Python DM script failed: ${response.error}`);
+        }
+        
     } catch (error) {
-        logger.error('Failed to send direct message to Bluesky:', error);
+        logger.error('Failed to execute Python DM script:', error);
         throw new Error('Failed to send direct message to Bluesky');
     }
 } 

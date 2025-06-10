@@ -160,14 +160,41 @@ If you want to track individual customer profiles (`ENABLE_EXTERNAL_CONTACTS=tru
 - **External Contacts**: Individual contact records for each Bluesky user, all linked to the "Bluesky" external source
 - Each unique Bluesky user (identified by their DID) gets their own external contact record for customer tracking
 
+## Setup Requirements
+
+This application requires both **Node.js/TypeScript** and **Python** to run:
+
+### Node.js/TypeScript (Main Application)
+- Node.js 18+
+- All TypeScript dependencies are installed via `npm install`
+
+### Python (Direct Messaging Only)
+The application uses Python for Bluesky direct message functionality because the TypeScript SDK doesn't fully support chat APIs yet.
+
+**Install Python dependencies:**
+```bash
+pip install atproto==0.0.55
+```
+
+Or use the npm script:
+```bash
+npm run python-setup
+```
+
+**Python Requirements File:**
+The `requirements.txt` file contains the specific Python library version needed.
+
 ## Deployment
 
 This application is designed to be deployed on the **DigitalOcean App Platform**.
 
 1.  Fork this repository.
 2.  Create a new App on the DigitalOcean App Platform and connect it to your forked repository.
-3.  Configure the required environment variables in the DigitalOcean UI (see below).
-4.  Deploy the application.
+3.  **Important**: Configure your DigitalOcean App Platform buildpack to support both Node.js and Python:
+    - In the App settings, set the **Buildpack** to `heroku/nodejs` 
+    - Add a build command that installs Python dependencies: `pip install -r requirements.txt`
+4.  Configure the required environment variables in the DigitalOcean UI (see below).
+5.  Deploy the application.
 
 ## Environment Variables
 

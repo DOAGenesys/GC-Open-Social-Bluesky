@@ -6,9 +6,10 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts",
+    "dev": "ts-node src/index.ts",
     "lint": "eslint . --ext .ts",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --write .",
+    "python-setup": "pip install atproto"
   },
   "keywords": [
     "genesys-cloud",

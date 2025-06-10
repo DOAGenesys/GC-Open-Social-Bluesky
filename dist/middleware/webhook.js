@@ -47,7 +47,21 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { text, channel, id } = message;
     // Check for reply information in the correct location
     const replyToId = ((_a = channel === null || channel === void 0 ? void 0 : channel.publicMetadata) === null || _a === void 0 ? void 0 : _a.replyToId) || (channel === null || channel === void 0 ? void 0 : channel.inReplyToMessageId);
-    if (channel && replyToId) {
+    if (channel && channel.type === 'Private') {
+        // Handle private messages (direct messages)
+        try {
+            const recipientDid = channel.to.id; // The Bluesky user's DID
+            const dmResponse = yield (0, bluesky_1.sendDirectMessage)(text, recipientDid);
+            yield (0, genesys_1.sendDeliveryReceipt)(id, channel, dmResponse.id || dmResponse.uri || '', true);
+            logger_1.logger.info('Successfully processed private message.');
+        }
+        catch (error) {
+            logger_1.logger.error('Failed to process private message:', error);
+            yield (0, genesys_1.sendDeliveryReceipt)(id, channel, '', false, error.message);
+        }
+    }
+    else if (channel && replyToId) {
+        // Handle public replies
         try {
             const parentUri = replyToId;
             if (text.trim() === '!like') {
@@ -82,7 +96,8 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
     }
     else {
-        logger_1.logger.warn('Ignoring message without reply information (no replyToId or inReplyToMessageId found).');
+        logger_1.logger.warn('Ignoring message: not a private message and no reply information found.');
+        logger_1.logger.debug('Channel type:', channel === null || channel === void 0 ? void 0 : channel.type);
         logger_1.logger.debug('Available channel fields:', Object.keys(channel || {}));
         logger_1.logger.debug('Channel publicMetadata:', channel === null || channel === void 0 ? void 0 : channel.publicMetadata);
     }

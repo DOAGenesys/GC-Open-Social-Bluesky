@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.repostPost = exports.likePost = exports.postReply = exports.getBlueskyAgent = void 0;
+exports.sendDirectMessage = exports.repostPost = exports.likePost = exports.postReply = exports.getBlueskyAgent = void 0;
 const api_1 = require("@atproto/api");
 const dotenv_1 = __importDefault(require("dotenv"));
 const redis_1 = require("./redis");
@@ -134,3 +134,32 @@ const repostPost = (uri, cid) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.repostPost = repostPost;
+const sendDirectMessage = (text, recipientDid) => __awaiter(void 0, void 0, void 0, function* () {
+    const { execSync } = require('child_process');
+    const path = require('path');
+    try {
+        // Path to the Python script
+        const pythonScript = path.join(__dirname, 'bluesky_dm.py');
+        // Execute the Python script with recipient DID and message text as arguments
+        const result = execSync(`python "${pythonScript}" "${recipientDid}" "${text}"`, {
+            encoding: 'utf8',
+            env: Object.assign({}, process.env), // Pass all environment variables
+            timeout: 30000 // 30 second timeout
+        });
+        // Parse the JSON response from Python
+        const response = JSON.parse(result.trim());
+        if (response.success) {
+            logger_1.logger.info('Successfully sent direct message to Bluesky via Python:', response);
+            return response;
+        }
+        else {
+            logger_1.logger.error('Python DM script failed:', response.error);
+            throw new Error(`Python DM script failed: ${response.error}`);
+        }
+    }
+    catch (error) {
+        logger_1.logger.error('Failed to execute Python DM script:', error);
+        throw new Error('Failed to send direct message to Bluesky');
+    }
+});
+exports.sendDirectMessage = sendDirectMessage;
