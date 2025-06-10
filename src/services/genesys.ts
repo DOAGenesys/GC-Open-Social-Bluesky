@@ -98,6 +98,41 @@ export const ingestMessages = async (messages: GenesysCloudMessage[]): Promise<a
     }
 }
 
+export const ingestDirectMessage = async (dmMessage: any): Promise<any> => {
+    const apiClient = getGenesysCloudApiClient();
+    const { GC_INTEGRATION_ID } = process.env;
+
+    if (!GC_INTEGRATION_ID) {
+        throw new Error('Missing Genesys Cloud Integration ID in environment variables');
+    }
+
+    try {
+        logger.debug('Ingesting DM to Genesys Cloud using Open Messaging inbound endpoint...');
+        logger.debug(`Using Integration ID: ${GC_INTEGRATION_ID}`);
+        
+        const response = await apiClient.post(
+            `/api/v2/conversations/messages/${GC_INTEGRATION_ID}/inbound/open/message`,
+            dmMessage,
+        );
+        logger.info('Successfully ingested DM into Genesys Cloud');
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            logger.error('Failed to ingest DM into Genesys Cloud:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                url: error.config?.url,
+                method: error.config?.method
+            });
+            logger.error('DM payload that failed:', JSON.stringify(dmMessage, null, 2));
+        } else {
+            logger.error('Failed to ingest DM into Genesys Cloud:', error);
+        }
+        throw new Error('Failed to ingest DM into Genesys Cloud');
+    }
+};
+
 export const sendDeliveryReceipt = async (messageId: string, originalChannel: any, blueskyPostUri: string, success: boolean, errorMessage?: string): Promise<any> => {
     const apiClient = getGenesysCloudApiClient();
     const { GC_INTEGRATION_ID } = process.env;
