@@ -23,20 +23,6 @@ const processSocialListening = async () => {
         const searchParams = { q: BLUESKY_SEARCH_QUERY, cursor: socialListeningCursor };
         logger.debug(`Bluesky search request params:`, searchParams);
         
-        // Test API search functionality with a very common word first
-        if (!socialListeningCursor) { // Only on first poll
-            try {
-                logger.debug('Testing API search with common word "the"...');
-                const testResponse = await agent.app.bsky.feed.searchPosts({ q: 'the', limit: 1 });
-                logger.debug(`Test search for "the" returned ${testResponse.data.posts.length} posts`);
-                if (testResponse.data.posts.length === 0) {
-                    logger.warn('API search appears to be non-functional - even common words return 0 results');
-                }
-            } catch (testError: any) {
-                logger.debug('Test search failed:', testError?.message);
-            }
-        }
-        
         const response = await agent.app.bsky.feed.searchPosts(searchParams);
         
         logger.debug(`Bluesky search response - posts found: ${response.data.posts.length}, cursor: ${response.data.cursor || 'none'}`);
