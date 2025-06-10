@@ -107,35 +107,25 @@ const processDMMessage = (dmMessage, botDid) => __awaiter(void 0, void 0, void 0
         if (ENABLE_EXTERNAL_CONTACTS === 'true') {
             yield (0, genesys_1.createOrUpdateExternalContact)(dmMessage.sender_did, dmMessage.sender_handle, dmMessage.sender_display_name);
         }
-        // Transform DM into Genesys Cloud message format for PRIVATE messages
-        const genesysMessage = {
+        // Transform DM into Open Messaging inbound format (different from social media ingestion)
+        const openMessagePayload = {
             channel: {
                 messageId: dmMessage.id, // Use DM message ID
-                platform: "Open", // Required platform field
-                type: "Private", // Critical: Mark as Private message for DMs
                 from: {
                     nickname: dmMessage.sender_handle || dmMessage.sender_did,
                     id: dmMessage.sender_did,
                     idType: "Opaque",
                     firstName: dmMessage.sender_display_name || dmMessage.sender_handle
                 },
-                to: {
-                    id: botDid, // Use the bot's actual DID from Python response
-                    idType: "Opaque"
-                },
-                time: dmMessage.sent_at,
-                // For DMs, use conversation ID and message ID for tracking
-                publicMetadata: {
-                    rootId: dmMessage.convo_id,
-                    replyToId: dmMessage.id
-                }
+                time: dmMessage.sent_at
             },
-            text: dmMessage.text
+            text: dmMessage.text,
+            direction: "Inbound"
         };
         // Debug: Log the complete message structure before ingestion
-        logger_1.logger.debug('Genesys Cloud DM message structure:', JSON.stringify(genesysMessage, null, 2));
-        // Ingest the message into Genesys Cloud
-        yield (0, genesys_1.ingestMessages)([genesysMessage]);
+        logger_1.logger.debug('Open Messaging inbound DM structure:', JSON.stringify(openMessagePayload, null, 2));
+        // Ingest the DM using the correct Open Messaging endpoint
+        yield (0, genesys_1.ingestDirectMessage)(openMessagePayload);
         logger_1.logger.info(`Successfully ingested DM from ${dmMessage.sender_handle}`);
     }
     catch (error) {

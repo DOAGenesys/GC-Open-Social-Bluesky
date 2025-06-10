@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createOrUpdateExternalContact = exports.sendDeliveryReceipt = exports.ingestMessages = exports.getGenesysCloudApiClient = void 0;
+exports.createOrUpdateExternalContact = exports.sendDeliveryReceipt = exports.ingestDirectMessage = exports.ingestMessages = exports.getGenesysCloudApiClient = void 0;
 const axios_1 = __importDefault(require("axios"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const logger_1 = require("./logger");
@@ -98,6 +98,38 @@ const ingestMessages = (messages) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.ingestMessages = ingestMessages;
+const ingestDirectMessage = (dmMessage) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d, _e;
+    const apiClient = (0, exports.getGenesysCloudApiClient)();
+    const { GC_INTEGRATION_ID } = process.env;
+    if (!GC_INTEGRATION_ID) {
+        throw new Error('Missing Genesys Cloud Integration ID in environment variables');
+    }
+    try {
+        logger_1.logger.debug('Ingesting DM to Genesys Cloud using Open Messaging inbound endpoint...');
+        logger_1.logger.debug(`Using Integration ID: ${GC_INTEGRATION_ID}`);
+        const response = yield apiClient.post(`/api/v2/conversations/messages/${GC_INTEGRATION_ID}/inbound/open/message`, dmMessage);
+        logger_1.logger.info('Successfully ingested DM into Genesys Cloud');
+        return response.data;
+    }
+    catch (error) {
+        if (axios_1.default.isAxiosError(error)) {
+            logger_1.logger.error('Failed to ingest DM into Genesys Cloud:', {
+                status: (_a = error.response) === null || _a === void 0 ? void 0 : _a.status,
+                statusText: (_b = error.response) === null || _b === void 0 ? void 0 : _b.statusText,
+                data: (_c = error.response) === null || _c === void 0 ? void 0 : _c.data,
+                url: (_d = error.config) === null || _d === void 0 ? void 0 : _d.url,
+                method: (_e = error.config) === null || _e === void 0 ? void 0 : _e.method
+            });
+            logger_1.logger.error('DM payload that failed:', JSON.stringify(dmMessage, null, 2));
+        }
+        else {
+            logger_1.logger.error('Failed to ingest DM into Genesys Cloud:', error);
+        }
+        throw new Error('Failed to ingest DM into Genesys Cloud');
+    }
+});
+exports.ingestDirectMessage = ingestDirectMessage;
 const sendDeliveryReceipt = (messageId, originalChannel, blueskyPostUri, success, errorMessage) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const apiClient = (0, exports.getGenesysCloudApiClient)();
