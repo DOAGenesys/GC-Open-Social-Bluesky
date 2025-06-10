@@ -123,4 +123,31 @@ export const repostPost = async (uri: string, cid: string): Promise<any> => {
         logger.error('Failed to repost post:', error);
         throw new Error('Failed to repost post');
     }
+}
+
+export const sendDirectMessage = async (text: string, recipientDid: string): Promise<any> => {
+    const agent = await getBlueskyAgent();
+    try {
+        // Check if a conversation already exists with this user or create one
+        const convoResponse = await agent.api.chat.bsky.convo.getConvoForMembers({ 
+            members: [recipientDid] 
+        });
+        
+        const convoId = convoResponse.data.convo.id;
+        logger.info(`Using conversation: ${convoId}`);
+
+        // Send the message to the conversation
+        const response = await agent.api.chat.bsky.convo.sendMessage({
+            convoId: convoId,
+            message: {
+                text: text
+            }
+        });
+
+        logger.info('Successfully sent direct message to Bluesky:', response.data);
+        return response.data;
+    } catch (error) {
+        logger.error('Failed to send direct message to Bluesky:', error);
+        throw new Error('Failed to send direct message to Bluesky');
+    }
 } 

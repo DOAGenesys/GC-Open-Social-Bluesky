@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
-import { postReply, likePost, repostPost } from '../services/bluesky';
+import { postReply, likePost, repostPost, sendDirectMessage } from '../services/bluesky';
 import { sendDeliveryReceipt } from '../services/genesys';
 import { getConversationState } from '../services/redis';
 import { logger } from '../services/logger';
@@ -42,7 +42,19 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
     // Check for reply information in the correct location
     const replyToId = channel?.publicMetadata?.replyToId || channel?.inReplyToMessageId;
     
-    if (channel && replyToId) {
+    if (channel && channel.type === 'Private') {
+        // Handle private messages (direct messages)
+        try {
+            const recipientDid = channel.to.id; // The Bluesky user's DID
+            const dmResponse = await sendDirectMessage(text, recipientDid);
+            await sendDeliveryReceipt(id, channel, dmResponse.id || dmResponse.uri || '', true);
+            logger.info('Successfully processed private message.');
+        } catch (error: any) {
+            logger.error('Failed to process private message:', error);
+            await sendDeliveryReceipt(id, channel, '', false, error.message);
+        }
+    } else if (channel && replyToId) {
+        // Handle public replies
         try {
             const parentUri = replyToId;
             if (text.trim() === '!like') {
@@ -71,7 +83,8 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
             await sendDeliveryReceipt(id, channel, '', false, error.message);
         }
     } else {
-        logger.warn('Ignoring message without reply information (no replyToId or inReplyToMessageId found).');
+        logger.warn('Ignoring message: not a private message and no reply information found.');
+        logger.debug('Channel type:', channel?.type);
         logger.debug('Available channel fields:', Object.keys(channel || {}));
         logger.debug('Channel publicMetadata:', channel?.publicMetadata);
     }
