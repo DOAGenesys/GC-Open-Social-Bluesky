@@ -39,9 +39,12 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
     const message = req.body;
     const { text, channel, id } = message;
 
-    if (channel && channel.inReplyToMessageId) {
+    // Check for reply information in the correct location
+    const replyToId = channel?.publicMetadata?.replyToId || channel?.inReplyToMessageId;
+    
+    if (channel && replyToId) {
         try {
-            const parentUri = channel.inReplyToMessageId;
+            const parentUri = replyToId;
             if (text.trim() === '!like') {
                 const parentState = await getConversationState(parentUri);
                 if (parentState) {
@@ -68,7 +71,9 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
             await sendDeliveryReceipt(id, '', false, error.message);
         }
     } else {
-        logger.warn('Ignoring message without inReplyToMessageId for now.');
+        logger.warn('Ignoring message without reply information (no replyToId or inReplyToMessageId found).');
+        logger.debug('Available channel fields:', Object.keys(channel || {}));
+        logger.debug('Channel publicMetadata:', channel?.publicMetadata);
     }
 
     res.status(200).send();

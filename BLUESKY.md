@@ -90,7 +90,7 @@ Agents can use a special command in a Genesys Cloud script (e.g., !like, !repost
 The middleware will parse these commands and use the agent.like and agent.repost methods to perform the corresponding action on Bluesky. The uri and cid of the target post will be retrieved from the Redis cache.
 
 4. State Management with Redis
-A Redis database (Upstash) will be used to store the mapping between Bluesky post URIs/CIDs and Genesys Cloud conversation IDs. This is crucial for:
+A Redis database (Upstash or similar) will be used to store the mapping between Bluesky post URIs/CIDs and Genesys Cloud conversation IDs. This is crucial for:
 
 Threading: Correctly constructing reply chains.
 Idempotency: Preventing duplicate ingestion of the same post.
