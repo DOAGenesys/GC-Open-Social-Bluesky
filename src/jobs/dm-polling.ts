@@ -21,17 +21,21 @@ interface BlueskyDMMessage {
 }
 
 const processDMPolling = async () => {
+    logger.debug('🔄 Starting DM polling cycle...');
+    
     try {
         // Get the last check timestamp from Redis
         const lastCheck = await redis.get(DM_LAST_CHECK_KEY);
         const pythonScript = path.join(process.cwd(), 'src', 'services', 'bluesky_dm_poll.py');
+        
+        logger.debug(`Last DM check timestamp: ${lastCheck || 'none (first time)'}`);
         
         // Build command with optional since parameter
         const command = lastCheck 
             ? `python "${pythonScript}" "${lastCheck}"`
             : `python "${pythonScript}"`;
         
-        logger.debug(`Polling for DMs with command: ${command}`);
+        logger.debug(`Executing DM polling command: ${command}`);
         
         // Execute the Python script
         const result = execSync(command, { 
@@ -40,22 +44,26 @@ const processDMPolling = async () => {
             timeout: 30000 // 30 second timeout
         });
         
+        logger.debug(`Python script output: ${result}`);
+        
         // Parse the JSON response from Python
         const response = JSON.parse(result.trim());
         
         if (!response.success) {
-            logger.error('DM polling failed:', response.error);
+            logger.error('❌ DM polling failed:', response.error);
             return;
         }
         
-        const { messages, new_message_count } = response;
+        const { messages, new_message_count, total_conversations } = response;
+        
+        logger.debug(`DM polling results: ${new_message_count} new messages from ${total_conversations} total conversations`);
         
         if (new_message_count === 0) {
-            logger.debug('No new DMs found');
+            logger.debug('✅ No new DMs found');
             return;
         }
         
-        logger.info(`Found ${new_message_count} new DM(s)`);
+        logger.info(`📨 Found ${new_message_count} new DM(s) to process`);
         
         // Process each new message
         for (const dmMessage of messages) {
@@ -63,10 +71,15 @@ const processDMPolling = async () => {
         }
         
         // Update the last check timestamp
-        await redis.set(DM_LAST_CHECK_KEY, new Date().toISOString());
+        const newTimestamp = new Date().toISOString();
+        await redis.set(DM_LAST_CHECK_KEY, newTimestamp);
+        logger.debug(`Updated last DM check timestamp to: ${newTimestamp}`);
         
     } catch (error) {
-        logger.error('Failed to poll for DMs:', error);
+        logger.error('❌ Failed to poll for DMs:', error);
+        if (error instanceof Error && error.message) {
+            logger.error('Error details:', error.message);
+        }
     }
 };
 
@@ -114,7 +127,20 @@ const processDMMessage = async (dmMessage: BlueskyDMMessage) => {
 };
 
 export const startDMPolling = () => {
-    logger.info('Starting DM polling...');
-    setInterval(processDMPolling, POLLING_INTERVAL_MS);
-    processDMPolling(); // Run immediately on startup
+    logger.info(`📱 Starting DM polling with ${POLLING_INTERVAL_MS / 1000}s interval...`);
+    
+    // Set up the polling interval
+    const intervalId = setInterval(processDMPolling, POLLING_INTERVAL_MS);
+    
+    // Run immediately on startup
+    logger.info('🚀 Running initial DM polling check...');
+    processDMPolling()
+        .then(() => {
+            logger.info('✅ Initial DM polling completed successfully');
+        })
+        .catch((error) => {
+            logger.error('❌ Initial DM polling failed:', error);
+        });
+    
+    return intervalId;
 }; 

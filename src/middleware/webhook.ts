@@ -41,16 +41,27 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
 
     // Check for message deduplication (prevent processing same message multiple times)
     const dedupeKey = `webhook:processed:${id}`;
-    const alreadyProcessed = await redis.get(dedupeKey);
+    logger.debug(`Checking deduplication for message ID: ${id} with key: ${dedupeKey}`);
     
-    if (alreadyProcessed) {
-        logger.warn(`Skipping duplicate webhook message with ID: ${id}`);
-        res.status(200).send();
-        return;
+    try {
+        const alreadyProcessed = await redis.get(dedupeKey);
+        logger.debug(`Deduplication check result for ${id}: ${alreadyProcessed ? 'DUPLICATE' : 'NEW'}`);
+        
+        if (alreadyProcessed) {
+            logger.warn(`🚫 SKIPPING DUPLICATE webhook message with ID: ${id} (previously processed at: ${alreadyProcessed})`);
+            res.status(200).send();
+            return;
+        }
+        
+        // Mark this message as being processed (expires after 1 hour)
+        const processingTimestamp = new Date().toISOString();
+        await redis.set(dedupeKey, processingTimestamp, { ex: 3600 });
+        logger.info(`✅ PROCESSING NEW webhook message ID: ${id} - marked in Redis at ${processingTimestamp}`);
+        
+    } catch (redisError) {
+        logger.error(`Redis deduplication failed for message ${id}:`, redisError);
+        logger.warn(`Proceeding with webhook processing despite Redis error to avoid blocking`);
     }
-    
-    // Mark this message as being processed (expires after 1 hour)
-    await redis.set(dedupeKey, new Date().toISOString(), { ex: 3600 });
 
     // Check for reply information in the correct location
     const replyToId = channel?.publicMetadata?.replyToId || channel?.inReplyToMessageId;
