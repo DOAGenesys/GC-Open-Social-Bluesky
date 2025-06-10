@@ -72,10 +72,16 @@ const processSocialListening = async () => {
             logger.debug(`Total posts to process: ${newPosts.length} (out of ${response.data.posts.length} found)`);
 
             if (newPosts.length > 0) {
-                // Create/update contacts first
-                for (const post of newPosts) {
-                    logger.debug(`Creating/updating contact for user: ${post.author.did} (@${post.author.handle})`);
-                    await createOrUpdateExternalContact(post.author.did, post.author.displayName || post.author.handle, post.author.handle);
+                // Create/update contacts first (only if enabled)
+                const { ENABLE_EXTERNAL_CONTACTS } = process.env;
+                if (ENABLE_EXTERNAL_CONTACTS === 'true') {
+                    logger.debug('External contacts feature is enabled, creating/updating contacts...');
+                    for (const post of newPosts) {
+                        logger.debug(`Creating/updating contact for user: ${post.author.did} (@${post.author.handle})`);
+                        await createOrUpdateExternalContact(post.author.did, post.author.displayName || post.author.handle, post.author.handle);
+                    }
+                } else {
+                    logger.debug('External contacts feature is disabled, skipping contact creation');
                 }
 
                 logger.debug(`Converting ${newPosts.length} posts to Genesys messages...`);

@@ -171,6 +171,7 @@ The following environment variables are required for the application to function
 | `REDIS_TOKEN` | The authentication token for the Upstash Redis database. | `your-redis-token` |
 | `LOG_LEVEL` | The logging level for the application (`debug`, `info`, `warn`, `error`). | `info` |
 | `BLUESKY_SEARCH_QUERY` | Search terms for social listening on Bluesky. Uses Bluesky's search syntax. Leave empty to disable social listening. | `"@mycompany OR #support"` |
+| `ENABLE_EXTERNAL_CONTACTS` | Whether to create/update external contacts in Genesys Cloud for each Bluesky user. Set to `false` to skip contact creation entirely. | `true` |
 | `POLLING_TIME_SOCIAL_LISTENING` | The polling interval in seconds for social listening. Defaults to 300 (5 minutes). | `300` |
 | `POLLING_TIME_INBOUND_NOTIFICATIONS` | The polling interval in seconds for inbound notifications (mentions/replies). Defaults to 60 (1 minute). | `60` |
 
@@ -196,3 +197,21 @@ Once the middleware is deployed and running with the correct environment variabl
 1.  **Define Agent Command:** Ensure your middleware is configured to recognize a command like `!like`.
 2.  **Send Command:** While handling an active interaction (from Test 1), have the agent send the message `!like` as a response.
 3.  **Verify Action:** Check the original post on Bluesky. The integrated account (`mycompany.bsky.social`) should have now "liked" that post.
+
+## External Contacts Integration
+
+When `ENABLE_EXTERNAL_CONTACTS=true`, the middleware automatically creates and manages external contacts in Genesys Cloud:
+
+- **Individual Tracking**: Each unique Bluesky user gets their own external contact profile based on their Bluesky DID (Decentralized Identifier)
+- **Profile Data**: Stores the user's display name, handle, and Bluesky DID for identification
+- **Customer History**: Links all posts from the same user to their contact profile for better customer service context and conversation history
+- **Automatic Management**: Creates new contacts when first encountered, updates existing contacts if profile information changes
+- **Optional Feature**: Set `ENABLE_EXTERNAL_CONTACTS=false` to skip contact creation entirely and only process messages without customer tracking
+
+This feature is useful for customer service teams who want to:
+- Track interaction history with specific users across multiple posts and conversations
+- Build customer profiles and context for better service delivery
+- Identify repeat customers or frequent posters
+- Maintain continuity in customer relationships across different service interactions
+
+**Note**: Each Bluesky user is uniquely identified by their DID (not their handle), ensuring accurate tracking even if users change their display names or handles.

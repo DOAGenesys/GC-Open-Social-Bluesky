@@ -35,9 +35,15 @@ const processNotifications = async () => {
       if (newMentions.length > 0) {
         const postsResponse = await agent.getPosts({ uris: newMentions.map(n => n.uri) });
         if (postsResponse.data.posts) {
-            // Create/update contacts first
-            for (const post of postsResponse.data.posts) {
-                await createOrUpdateExternalContact(post.author.did, post.author.displayName || post.author.handle, post.author.handle);
+            // Create/update contacts first (only if enabled)
+            const { ENABLE_EXTERNAL_CONTACTS } = process.env;
+            if (ENABLE_EXTERNAL_CONTACTS === 'true') {
+                logger.debug('External contacts feature is enabled, creating/updating contacts...');
+                for (const post of postsResponse.data.posts) {
+                    await createOrUpdateExternalContact(post.author.did, post.author.displayName || post.author.handle, post.author.handle);
+                }
+            } else {
+                logger.debug('External contacts feature is disabled, skipping contact creation');
             }
 
             const genesysMessages = await Promise.all(postsResponse.data.posts.map(post => blueskyToGenesys(agent, post)));
