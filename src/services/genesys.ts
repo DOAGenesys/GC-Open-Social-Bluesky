@@ -135,20 +135,24 @@ export const createOrUpdateExternalContact = async (did: string, displayName: st
         throw new Error('Missing GC_EC_DIVISION_ID environment variable. This should be the ID of the division for external contacts in Genesys Cloud.');
     }
 
-    const contact = {
+    // Only include fields that have actual values (not empty strings)
+    const contact: any = {
         firstName: displayName,
-        lastName: '',
-        division: GC_EC_DIVISION_ID,  // Division ID as string, not object
+        division: {
+            id: GC_EC_DIVISION_ID  // Division should be an object with id property
+        },
         externalIds: [
             {
-                externalSource: GC_EXTERNAL_SOURCE_ID,
+                externalSource: {
+                    id: GC_EXTERNAL_SOURCE_ID  // ExternalSource should be an object with id property
+                },
                 value: did,
             }
-        ],
-        // It would be good to store the handle somewhere, but there is no standard field for it.
-        // We could use a custom field if the customer sets it up.
-        // For now, we will just use the display name.
+        ]
     };
+
+    // Note: We don't include lastName since Bluesky users typically only have 
+    // a display name or handle. Including empty fields causes API errors.
 
     logger.debug(`Creating/updating contact for DID: ${did}, displayName: ${displayName}, handle: ${handle}`);
     logger.debug(`Contact payload:`, contact);
