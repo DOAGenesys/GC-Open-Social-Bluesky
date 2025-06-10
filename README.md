@@ -71,6 +71,36 @@ The middleware consists of the following components:
 4.  **State Management:** A Redis database (Upstash, for example, which has a free tier available) to maintain conversation state and mappings between Bluesky and Genesys Cloud entities.
 5.  **Main Application Logic:** The core processing engine that handles data transformation, routing, and business logic.
 
+### Genesys Cloud API Endpoints Used
+
+The middleware uses two different Genesys Cloud endpoints for ingesting messages, depending on the message type:
+
+#### 1. Social Media Ingestion (Public Posts)
+**Endpoint**: `POST /api/v2/socialmedia/topics/{topicId}/dataingestionrules/open/{ruleId}/messages/bulk`
+
+**Used for**:
+- Public posts and replies from Bluesky
+- Social listening results (posts containing search keywords)
+- Mentions and notifications
+- **Channel Type**: Only supports `Public` messages
+
+**Environment Variables Required**:
+- `GC_SOCIAL_TOPIC_ID` - The social media topic ID
+- `GC_SOCIAL_RULE_ID` - The data ingestion rule ID
+
+#### 2. Open Messaging Inbound (Direct Messages)
+**Endpoint**: `POST /api/v2/conversations/messages/{integrationId}/inbound/open/message`
+
+**Used for**:
+- Direct messages from Bluesky users
+- Private conversations initiated by customers
+- **Channel Type**: Supports `Private` conversations
+
+**Environment Variables Required**:
+- `GC_INTEGRATION_ID` - The Open Messaging integration ID
+
+**⚠️ Important**: These endpoints are **not interchangeable**. The Social Media ingestion endpoint will reject private messages with a `400 Bad Request` error, while the Open Messaging endpoint is designed specifically for private conversations.
+
 ## The Critical Role of the Database
 
 Based on the requirements and the capabilities of both the Bluesky and Genesys Cloud APIs, building a middleware that meets all the specified features **is not feasible without a database** or a similar persistent storage mechanism (like the Redis instance used here).

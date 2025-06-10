@@ -32,9 +32,13 @@ The middleware will periodically fetch new posts from Bluesky to be ingested int
 - **Custom Feeds/Social Listening**: For social listening use cases, the middleware will fetch posts from specific feed generators (getFeed) or search for posts matching certain criteria (searchPosts).
 - **Direct Message Monitoring**: The middleware polls for new direct messages using Python's `atproto` library (since TypeScript SDK doesn't support chat APIs).
 
-### 2.2. Post Ingestion
+### 2.2. Post Ingestion (Public Posts)
 
-Each relevant Bluesky post will be transformed into a Genesys Cloud Open Social Message. The following mapping will be applied:
+Each relevant Bluesky post will be transformed into a Genesys Cloud Open Social Message and ingested using the **Social Media ingestion endpoint**:
+
+**Endpoint**: `POST /api/v2/socialmedia/topics/{topicId}/dataingestionrules/open/{ruleId}/messages/bulk`
+
+The following mapping will be applied:
 
 - **text**: The text content of the Bluesky post.
 - **createdAt**: The creation timestamp of the post.
@@ -45,12 +49,45 @@ Each relevant Bluesky post will be transformed into a Genesys Cloud Open Social 
 - **reply**: For replies, the middleware will fetch the parent and root posts to provide full context. The replyToId in the Genesys Cloud message will be set to the AT URI of the parent post.
 - **facets**: Mentions and links within the post text will be formatted appropriately for display in Genesys Cloud.
 
-### 2.3. User Identity
+### 2.3. Direct Message Ingestion (Private Messages)
+
+**⚠️ Important Architectural Difference**: Direct messages use a **different endpoint** than public posts.
+
+**Endpoint**: `POST /api/v2/conversations/messages/{integrationId}/inbound/open/message`
+
+**Why Different?**: The Social Media ingestion endpoint only supports `Public` channel types. Direct messages require `Private` channel support, which is only available through the Open Messaging inbound endpoint.
+
+Each Bluesky DM will be transformed into an Open Messaging inbound message with this structure:
+
+```json
+{
+  "channel": {
+    "messageId": "<Bluesky DM Message ID>",
+    "from": {
+      "nickname": "<Bluesky User Handle or DID>",
+      "id": "<Bluesky User DID>",
+      "idType": "Opaque",
+      "firstName": "<Bluesky User Display Name>"
+    },
+    "time": "<Bluesky DM Creation Timestamp>"
+  },
+  "text": "<DM text content>",
+  "direction": "Inbound"
+}
+```
+
+**Key Differences from Public Posts**:
+- Uses Integration ID instead of Topic/Rule IDs
+- Simplified message structure (no `publicMetadata`)
+- Includes `direction: "Inbound"` field
+- Single message per request (not array)
+
+### 2.4. User Identity
 
 - The Bluesky user's DID (did), handle, display name, and avatar URL will be extracted from each post.
 - This information will be used to create or update an external contact in Genesys Cloud, with the Bluesky DID serving as a unique identifier.
 
-### 2.4. Likes and Reposts
+### 2.5. Likes and Reposts
 
 - The middleware will monitor notifications for new likes and reposts of the authenticated user's posts.
 - These interactions will be ingested as "reactions" into Genesys Cloud's social listening module.
