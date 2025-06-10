@@ -94,7 +94,38 @@ If an agent sends a message with an attachment from Genesys Cloud, the middlewar
 - Upload it to Bluesky using agent.uploadBlob.
 - Include the blob reference in the embed object of the new post.
 
-### 3.4. Likes and Reposts from Agents
+### 3.4. Direct Messages (Private Messages)
+
+For private messages from Genesys Cloud, the middleware will send direct messages using Bluesky's chat API:
+
+- The middleware receives a webhook with `channel.type: 'Private'`
+- Extracts the recipient DID from `channel.to.id`
+- Uses raw XRPC calls with proper `atproto-proxy` headers to access the chat service:
+
+```typescript
+// Get or create conversation
+const convoResponse = await agent.api.call('chat.bsky.convo.getConvoForMembers', { 
+    members: [recipientDid] 
+}, {
+    headers: {
+        'atproto-proxy': 'did:web:api.bsky.chat#bsky_chat'
+    }
+});
+
+// Send the message
+const response = await agent.api.call('chat.bsky.convo.sendMessage', {
+    convoId: convoResponse.data.convo.id,
+    message: { text: messageText }
+}, {
+    headers: {
+        'atproto-proxy': 'did:web:api.bsky.chat#bsky_chat'
+    }
+});
+```
+
+**Important**: Direct messaging requires the App Password to have "Direct Messages" scope enabled when created.
+
+### 3.5. Likes and Reposts from Agents
 
 To enable agents to like or repost from Genesys Cloud, a specific workflow will be implemented:
 
