@@ -100,10 +100,11 @@ export const sendDeliveryReceipt = async (messageId: string, blueskyPostUri: str
         id: messageId,
         channel: {
             messageId: blueskyPostUri,
+            time: new Date().toISOString(),  // Add required date field
         },
         status: success ? 'Delivered' : 'Failed',
         isFinalReceipt: true,
-        reasons: errorMessage ? [{ code: 'Error', message: errorMessage }] : undefined,
+        reasons: errorMessage ? [{ code: 'GeneralError', message: errorMessage }] : undefined,
     };
 
     try {
