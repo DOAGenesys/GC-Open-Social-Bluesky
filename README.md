@@ -140,11 +140,20 @@ Before deploying the middleware, you must perform several manual configuration s
 
 If you want to track individual customer profiles (`ENABLE_EXTERNAL_CONTACTS=true`):
 
-1.  Navigate to **Admin** > **External Contacts**.
-2.  Click **Add Source** and create a new source named `Bluesky`.
-3.  **Important**: After creating the source, click on it to view its details and copy the **Source ID**. This will be your `GC_EXTERNAL_SOURCE_ID` environment variable.
-4.  Navigate to **Admin** > **Message** > **Identity Resolution**.
-5.  Find your Open Messaging integration and configure it to use the `Bluesky` external source you just created.
+1.  **Get Division ID**:
+    - Navigate to **Admin** > **Organization** > **Divisions**
+    - Find the division where you want to store external contacts (usually "Home" or your main division)
+    - Copy the **Division ID** - this will be your `GC_EC_DIVISION_ID` environment variable
+
+2.  **Create External Source**:
+    - Navigate to **Admin** > **External Contacts**
+    - Click **Add Source** and create a new source named `Bluesky`
+    - After creating the source, click on it to view its details and copy the **Source ID**
+    - This will be your `GC_EXTERNAL_SOURCE_ID` environment variable
+
+3.  **Configure Identity Resolution**:
+    - Navigate to **Admin** > **Message** > **Identity Resolution**
+    - Find your Open Messaging integration and configure it to use the `Bluesky` external source you just created
 
 **Understanding External Contacts vs External Sources:**
 - **External Source**: A single category/source type (like "Bluesky") that you create once in Genesys Cloud
@@ -176,6 +185,7 @@ The following environment variables are required for the application to function
 | `GC_SOCIAL_TOPIC_ID` | The ID of the Social Listening Topic in Genesys Cloud for ingesting Bluesky posts. | `your-gc-topic-id` |
 | `GC_SOCIAL_RULE_ID` | The ID of the Open Data Ingestion Rule in Genesys Cloud. | `your-gc-rule-id` |
 | `GC_EXTERNAL_SOURCE_ID` | The ID of the "Bluesky" external source in Genesys Cloud (required if `ENABLE_EXTERNAL_CONTACTS=true`). | `your-external-source-id` |
+| `GC_EC_DIVISION_ID` | The ID of the division for external contacts in Genesys Cloud (required if `ENABLE_EXTERNAL_CONTACTS=true`). | `your-division-id` |
 | `REDIS_URL` | The connection URL for the Upstash Redis database. | `redis://...` |
 | `REDIS_TOKEN` | The authentication token for the Upstash Redis database. | `your-redis-token` |
 | `LOG_LEVEL` | The logging level for the application (`debug`, `info`, `warn`, `error`). | `info` |
@@ -228,7 +238,9 @@ When `ENABLE_EXTERNAL_CONTACTS=true`, the middleware automatically creates and m
 - Maintain continuity in customer relationships across different service interactions
 
 ### Configuration
-- **Required**: Set `GC_EXTERNAL_SOURCE_ID` to the ID of your "Bluesky" external source
+- **Required Environment Variables** (when `ENABLE_EXTERNAL_CONTACTS=true`):
+  - `GC_EXTERNAL_SOURCE_ID`: The ID of your "Bluesky" external source
+  - `GC_EC_DIVISION_ID`: The ID of the division where contacts will be stored
 - **Optional Feature**: Set `ENABLE_EXTERNAL_CONTACTS=false` to skip contact creation entirely
 
 **Important**: Each Bluesky user is uniquely identified by their DID (not their handle), ensuring accurate tracking even if users change their display names or handles.

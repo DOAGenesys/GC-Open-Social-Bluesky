@@ -125,23 +125,23 @@ export const sendDeliveryReceipt = async (messageId: string, blueskyPostUri: str
 
 export const createOrUpdateExternalContact = async (did: string, displayName: string, handle: string): Promise<any> => {
     const apiClient = getGenesysCloudApiClient();
-    const { GC_EXTERNAL_SOURCE_ID } = process.env;
+    const { GC_EXTERNAL_SOURCE_ID, GC_EC_DIVISION_ID } = process.env;
 
     if (!GC_EXTERNAL_SOURCE_ID) {
         throw new Error('Missing GC_EXTERNAL_SOURCE_ID environment variable. This should be the ID of the "Bluesky" external source in Genesys Cloud.');
     }
 
+    if (!GC_EC_DIVISION_ID) {
+        throw new Error('Missing GC_EC_DIVISION_ID environment variable. This should be the ID of the division for external contacts in Genesys Cloud.');
+    }
+
     const contact = {
         firstName: displayName,
         lastName: '',
-        division: {
-            id: '*'  // Use wildcard division as seen in Genesys Cloud examples
-        },
+        division: GC_EC_DIVISION_ID,  // Division ID as string, not object
         externalIds: [
             {
-                externalSource: {
-                    id: GC_EXTERNAL_SOURCE_ID  // External source should be an object with id property
-                },
+                externalSource: GC_EXTERNAL_SOURCE_ID,
                 value: did,
             }
         ],
