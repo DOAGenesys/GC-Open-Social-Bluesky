@@ -118,14 +118,15 @@ The middleware receives outbound messages from Genesys Cloud via a webhook.
 
 When an agent sends a message, the middleware receives a payload in the OpenOutboundNormalizedMessage format and:
 
-1. Parses the textBody, inReplyToMessageId, and attachments.
-2. Determines the action:
-   - If inReplyToMessageId is present, sends a reply to the Bluesky post.
-   - If textBody contains commands (e.g., !like, !repost), triggers the corresponding Bluesky action.
-   - Otherwise, posts a new top-level Bluesky post.
-3. If textBody contains commands (e.g., `!like`, `!repost`), triggers the corresponding Bluesky action. The middleware will use the `inReplyToMessageId` to identify the post to like or repost.
-4. Otherwise, posts a new top-level Bluesky post. This is currently not implemented, and the middleware will ignore messages without an `inReplyToMessageId`.
-5. Uses the Bluesky API to perform the action.
+1. Parses the textBody, inReplyToMessageId, attachments, and channel type.
+2. Determines the action based on channel type:
+   - **Private Messages** (`channel.type: 'Private'`): Sends as direct message via **Python script** (required because TypeScript SDK doesn't support DMs)
+   - **Public Messages** with `inReplyToMessageId`: Sends a reply to the Bluesky post using TypeScript
+   - **Special Commands** (`!like`, `!repost`): Triggers corresponding Bluesky action using TypeScript
+3. **Important**: For direct messages, the middleware calls a Python script because:
+   - **The TypeScript `@atproto/api` SDK does NOT support Bluesky's chat/DM APIs**
+   - **Only the Python `atproto` library has full direct messaging support**
+4. Uses the appropriate API (Python for DMs, TypeScript for everything else) to perform the action.
 
 ### 4.3. Receipts
 

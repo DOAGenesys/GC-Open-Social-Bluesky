@@ -96,12 +96,18 @@ If an agent sends a message with an attachment from Genesys Cloud, the middlewar
 
 ### 3.4. Direct Messages (Private Messages)
 
-For private messages from Genesys Cloud, the middleware uses a hybrid approach combining TypeScript and Python:
+**⚠️ Important: Python Required for Direct Messages**
 
+For private messages (DMs) from Genesys Cloud, the middleware uses a **hybrid Python/TypeScript approach** because:
+- **The TypeScript `@atproto/api` SDK does NOT support Bluesky's chat/DM APIs**
+- **Only the Python `atproto` library has full direct messaging support**
+
+**Architecture Overview:**
 - The middleware receives a webhook with `channel.type: 'Private'`
 - Extracts the recipient DID from `channel.to.id`
-- **Uses Python script for DM functionality**: Since the TypeScript SDK doesn't fully support chat APIs yet, we use a Python script (`src/services/bluesky_dm.py`) that leverages the mature Python `atproto` library
-- The TypeScript service calls the Python script using `child_process.execSync()`
+- **TypeScript calls a Python script** (`src/services/bluesky_dm.py`) via `child_process.execSync()`
+- **Python script** handles the actual DM sending using the mature Python `atproto` library
+- **TypeScript** handles the response and delivery receipt back to Genesys Cloud
 
 **Python Implementation** (`src/services/bluesky_dm.py`):
 ```python

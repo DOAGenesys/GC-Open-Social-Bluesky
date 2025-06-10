@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { postReply, likePost, repostPost, sendDirectMessage } from '../services/bluesky';
 import { sendDeliveryReceipt } from '../services/genesys';
-import { getConversationState } from '../services/redis';
+import { getConversationState, redis } from '../services/redis';
 import { logger } from '../services/logger';
 
 const router = Router();
@@ -38,6 +38,19 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
     
     const message = req.body;
     const { text, channel, id } = message;
+
+    // Check for message deduplication (prevent processing same message multiple times)
+    const dedupeKey = `webhook:processed:${id}`;
+    const alreadyProcessed = await redis.get(dedupeKey);
+    
+    if (alreadyProcessed) {
+        logger.warn(`Skipping duplicate webhook message with ID: ${id}`);
+        res.status(200).send();
+        return;
+    }
+    
+    // Mark this message as being processed (expires after 1 hour)
+    await redis.set(dedupeKey, new Date().toISOString(), { ex: 3600 });
 
     // Check for reply information in the correct location
     const replyToId = channel?.publicMetadata?.replyToId || channel?.inReplyToMessageId;

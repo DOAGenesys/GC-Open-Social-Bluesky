@@ -169,7 +169,11 @@ This application requires both **Node.js/TypeScript** and **Python** to run:
 - All TypeScript dependencies are installed via `npm install`
 
 ### Python (Direct Messaging Only)
-The application uses Python for Bluesky direct message functionality because the TypeScript SDK doesn't fully support chat APIs yet.
+**⚠️ Critical Requirement**: The application uses Python for Bluesky direct message functionality because:
+- **The TypeScript `@atproto/api` SDK does NOT support Bluesky's chat/DM APIs**
+- **Only the Python `atproto` library has full direct messaging support**
+
+This is not optional - **Python is required for the DM feature to work**.
 
 **Install Python dependencies:**
 ```bash
