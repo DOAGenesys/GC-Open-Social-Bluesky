@@ -45,6 +45,26 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     logger_1.logger.info('Received valid webhook from Genesys Cloud:', req.body);
     const message = req.body;
     const { text, channel, id } = message;
+    // Check for message deduplication (prevent processing same message multiple times)
+    const dedupeKey = `webhook:processed:${id}`;
+    logger_1.logger.debug(`Checking deduplication for message ID: ${id} with key: ${dedupeKey}`);
+    try {
+        const alreadyProcessed = yield redis_1.redis.get(dedupeKey);
+        logger_1.logger.debug(`Deduplication check result for ${id}: ${alreadyProcessed ? 'DUPLICATE' : 'NEW'}`);
+        if (alreadyProcessed) {
+            logger_1.logger.warn(`🚫 SKIPPING DUPLICATE webhook message with ID: ${id} (previously processed at: ${alreadyProcessed})`);
+            res.status(200).send();
+            return;
+        }
+        // Mark this message as being processed (expires after 1 hour)
+        const processingTimestamp = new Date().toISOString();
+        yield redis_1.redis.set(dedupeKey, processingTimestamp, { ex: 3600 });
+        logger_1.logger.info(`✅ PROCESSING NEW webhook message ID: ${id} - marked in Redis at ${processingTimestamp}`);
+    }
+    catch (redisError) {
+        logger_1.logger.error(`Redis deduplication failed for message ${id}:`, redisError);
+        logger_1.logger.warn(`Proceeding with webhook processing despite Redis error to avoid blocking`);
+    }
     // Check for reply information in the correct location
     const replyToId = ((_a = channel === null || channel === void 0 ? void 0 : channel.publicMetadata) === null || _a === void 0 ? void 0 : _a.replyToId) || (channel === null || channel === void 0 ? void 0 : channel.inReplyToMessageId);
     if (channel && channel.type === 'Private') {
