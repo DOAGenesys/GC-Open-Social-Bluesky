@@ -139,7 +139,9 @@ export const createOrUpdateExternalContact = async (did: string, displayName: st
         },
         externalIds: [
             {
-                externalSource: GC_EXTERNAL_SOURCE_ID,  // Use the external source ID, not name
+                externalSource: {
+                    id: GC_EXTERNAL_SOURCE_ID  // External source should be an object with id property
+                },
                 value: did,
             }
         ],
