@@ -96,8 +96,14 @@ const processSocialListening = async () => {
                     const post = newPosts[i];
                     const ingestedMessage = ingestionResult.entities.find((e: any) => e.channel.messageId === post.uri);
                     if (ingestedMessage) {
+                        // Check if post.cid exists, if not log available properties
+                        if (!post.cid) {
+                            logger.warn(`Post ${post.uri} missing cid property. Available properties:`, Object.keys(post));
+                            logger.debug(`Full post object:`, post);
+                        }
+                        
                         const state = {
-                            cid: post.cid,
+                            cid: post.cid || 'unknown', // Fallback if cid is missing
                             genesysConversationId: ingestedMessage.id,
                             rootUri: post.uri, // Social listening posts are always roots
                         };
