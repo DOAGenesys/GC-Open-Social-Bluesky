@@ -140,24 +140,49 @@ export const createOrUpdateExternalContact = async (did: string, displayName: st
         // For now, we will just use the display name.
     };
 
+    logger.debug(`Creating/updating contact for DID: ${did}, displayName: ${displayName}, handle: ${handle}`);
+    logger.debug(`Contact payload:`, contact);
+
     try {
         // First, try to find an existing contact by the DID
-        const searchResponse = await apiClient.get(`/api/v2/externalcontacts/contacts?q=${did}`);
-        if (searchResponse.data.entities.length > 0) {
+        // URL encode the DID to handle special characters
+        const encodedDid = encodeURIComponent(did);
+        const searchUrl = `/api/v2/externalcontacts/contacts?q=${encodedDid}`;
+        logger.debug(`Searching for existing contact with URL: ${searchUrl}`);
+        
+        const searchResponse = await apiClient.get(searchUrl);
+        logger.debug(`Search response:`, { 
+            status: searchResponse.status, 
+            entitiesCount: searchResponse.data.entities?.length || 0,
+            entities: searchResponse.data.entities 
+        });
+
+        if (searchResponse.data.entities && searchResponse.data.entities.length > 0) {
             // Contact exists, update it
             const existingContact = searchResponse.data.entities[0];
+            logger.debug(`Updating existing contact with ID: ${existingContact.id}`);
             const updateResponse = await apiClient.put(`/api/v2/externalcontacts/contacts/${existingContact.id}`, contact);
             logger.info('Successfully updated external contact in Genesys Cloud');
             return updateResponse.data;
         } else {
             // Contact does not exist, create it
+            logger.debug(`Creating new contact with payload:`, contact);
             const createResponse = await apiClient.post('/api/v2/externalcontacts/contacts', contact);
             logger.info('Successfully created external contact in Genesys Cloud');
             return createResponse.data;
         }
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            logger.error('Failed to create or update external contact in Genesys Cloud:', error.response?.data || error.message);
+            logger.error('Failed to create or update external contact in Genesys Cloud:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                headers: error.response?.headers,
+                url: error.config?.url,
+                method: error.config?.method,
+                requestData: error.config?.data
+            });
+            logger.debug('Full error details:', error);
         } else {
             logger.error('Failed to create or update external contact in Genesys Cloud:', error);
         }
