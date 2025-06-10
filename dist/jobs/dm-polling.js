@@ -52,7 +52,7 @@ const { POLLING_TIME_DM } = process.env;
 const POLLING_INTERVAL_MS = POLLING_TIME_DM ? parseInt(POLLING_TIME_DM, 10) * 1000 : 120000; // 2 minutes default
 const DM_LAST_CHECK_KEY = 'bluesky:dm:last_check';
 const processDMPolling = () => __awaiter(void 0, void 0, void 0, function* () {
-    logger_1.logger.debug('🔄 Starting DM polling cycle...');
+    logger_1.logger.debug('Starting DM polling cycle...');
     try {
         // Get the last check timestamp from Redis
         const lastCheck = yield redis_1.redis.get(DM_LAST_CHECK_KEY);
@@ -73,19 +73,19 @@ const processDMPolling = () => __awaiter(void 0, void 0, void 0, function* () {
         // Parse the JSON response from Python
         const response = JSON.parse(result.trim());
         if (!response.success) {
-            logger_1.logger.error('❌ DM polling failed:', response.error);
+            logger_1.logger.error('DM polling failed:', response.error);
             return;
         }
-        const { messages, new_message_count, total_conversations } = response;
+        const { messages, new_message_count, total_conversations, bot_did } = response;
         logger_1.logger.debug(`DM polling results: ${new_message_count} new messages from ${total_conversations} total conversations`);
         if (new_message_count === 0) {
-            logger_1.logger.debug('✅ No new DMs found');
+            logger_1.logger.debug('No new DMs found');
             return;
         }
-        logger_1.logger.info(`📨 Found ${new_message_count} new DM(s) to process`);
-        // Process each new message
+        logger_1.logger.info(`Found ${new_message_count} new DM(s) to process`);
+        // Process each new message with bot DID
         for (const dmMessage of messages) {
-            yield processDMMessage(dmMessage);
+            yield processDMMessage(dmMessage, bot_did);
         }
         // Update the last check timestamp
         const newTimestamp = new Date().toISOString();
@@ -93,13 +93,13 @@ const processDMPolling = () => __awaiter(void 0, void 0, void 0, function* () {
         logger_1.logger.debug(`Updated last DM check timestamp to: ${newTimestamp}`);
     }
     catch (error) {
-        logger_1.logger.error('❌ Failed to poll for DMs:', error);
+        logger_1.logger.error('Failed to poll for DMs:', error);
         if (error instanceof Error && error.message) {
             logger_1.logger.error('Error details:', error.message);
         }
     }
 });
-const processDMMessage = (dmMessage) => __awaiter(void 0, void 0, void 0, function* () {
+const processDMMessage = (dmMessage, botDid) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         logger_1.logger.info(`Processing DM from ${dmMessage.sender_handle}: "${dmMessage.text}"`);
         // Create or update external contact for the sender
@@ -107,24 +107,33 @@ const processDMMessage = (dmMessage) => __awaiter(void 0, void 0, void 0, functi
         if (ENABLE_EXTERNAL_CONTACTS === 'true') {
             yield (0, genesys_1.createOrUpdateExternalContact)(dmMessage.sender_did, dmMessage.sender_handle, dmMessage.sender_display_name);
         }
-        // Transform DM into Genesys Cloud message format
+        // Transform DM into Genesys Cloud message format for PRIVATE messages
         const genesysMessage = {
             channel: {
                 messageId: dmMessage.id, // Use DM message ID
+                platform: "Open", // Required platform field
+                type: "Private", // Critical: Mark as Private message for DMs
                 from: {
-                    nickname: dmMessage.sender_handle,
+                    nickname: dmMessage.sender_handle || dmMessage.sender_did,
                     id: dmMessage.sender_did,
                     idType: "Opaque",
                     firstName: dmMessage.sender_display_name || dmMessage.sender_handle
                 },
+                to: {
+                    id: botDid, // Use the bot's actual DID from Python response
+                    idType: "Opaque"
+                },
                 time: dmMessage.sent_at,
-                // For DMs, use the message ID as rootId (since it's not a post thread)
+                // For DMs, use conversation ID and message ID for tracking
                 publicMetadata: {
-                    rootId: dmMessage.id
+                    rootId: dmMessage.convo_id,
+                    replyToId: dmMessage.id
                 }
             },
             text: dmMessage.text
         };
+        // Debug: Log the complete message structure before ingestion
+        logger_1.logger.debug('Genesys Cloud DM message structure:', JSON.stringify(genesysMessage, null, 2));
         // Ingest the message into Genesys Cloud
         yield (0, genesys_1.ingestMessages)([genesysMessage]);
         logger_1.logger.info(`Successfully ingested DM from ${dmMessage.sender_handle}`);
@@ -134,17 +143,17 @@ const processDMMessage = (dmMessage) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 const startDMPolling = () => {
-    logger_1.logger.info(`📱 Starting DM polling with ${POLLING_INTERVAL_MS / 1000}s interval...`);
+    logger_1.logger.info(`Starting DM polling with ${POLLING_INTERVAL_MS / 1000}s interval...`);
     // Set up the polling interval
     const intervalId = setInterval(processDMPolling, POLLING_INTERVAL_MS);
     // Run immediately on startup
-    logger_1.logger.info('🚀 Running initial DM polling check...');
+    logger_1.logger.info('Running initial DM polling check...');
     processDMPolling()
         .then(() => {
-        logger_1.logger.info('✅ Initial DM polling completed successfully');
+        logger_1.logger.info('Initial DM polling completed successfully');
     })
         .catch((error) => {
-        logger_1.logger.error('❌ Initial DM polling failed:', error);
+        logger_1.logger.error('Initial DM polling failed:', error);
     });
     return intervalId;
 };

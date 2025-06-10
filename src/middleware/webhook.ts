@@ -48,7 +48,7 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
         logger.debug(`Deduplication check result for ${id}: ${alreadyProcessed ? 'DUPLICATE' : 'NEW'}`);
         
         if (alreadyProcessed) {
-            logger.warn(`🚫 SKIPPING DUPLICATE webhook message with ID: ${id} (previously processed at: ${alreadyProcessed})`);
+            logger.warn(`SKIPPING DUPLICATE webhook message with ID: ${id} (previously processed at: ${alreadyProcessed})`);
             res.status(200).send();
             return;
         }
@@ -56,7 +56,7 @@ router.post('/', async (req: Request, res: Response) : Promise<void> => {
         // Mark this message as being processed (expires after 1 hour)
         const processingTimestamp = new Date().toISOString();
         await redis.set(dedupeKey, processingTimestamp, { ex: 3600 });
-        logger.info(`✅ PROCESSING NEW webhook message ID: ${id} - marked in Redis at ${processingTimestamp}`);
+        logger.info(`PROCESSING NEW webhook message ID: ${id} - marked in Redis at ${processingTimestamp}`);
         
     } catch (redisError) {
         logger.error(`Redis deduplication failed for message ${id}:`, redisError);

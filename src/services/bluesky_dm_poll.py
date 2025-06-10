@@ -78,6 +78,7 @@ def poll_direct_messages(since_timestamp: str = None) -> dict:
         return {
             'success': True,
             'messages': new_messages,
+            'bot_did': client.me.did,  # Include bot's DID for TypeScript
             'total_conversations': len(convo_list.convos),
             'new_message_count': len(new_messages)
         }

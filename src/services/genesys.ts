@@ -72,6 +72,9 @@ export const ingestMessages = async (messages: GenesysCloudMessage[]): Promise<a
     }
 
     try {
+        logger.debug(`Ingesting ${messages.length} message(s) to Genesys Cloud...`);
+        logger.debug(`Using Topic ID: ${GC_SOCIAL_TOPIC_ID}, Rule ID: ${GC_SOCIAL_RULE_ID}`);
+        
         const response = await apiClient.post(
             `/api/v2/socialmedia/topics/${GC_SOCIAL_TOPIC_ID}/dataingestionrules/open/${GC_SOCIAL_RULE_ID}/messages/bulk`,
             messages,
@@ -80,7 +83,14 @@ export const ingestMessages = async (messages: GenesysCloudMessage[]): Promise<a
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            logger.error('Failed to ingest messages into Genesys Cloud:', error.response?.data || error.message);
+            logger.error('Failed to ingest messages into Genesys Cloud:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                url: error.config?.url,
+                method: error.config?.method
+            });
+            logger.error('Request payload that failed:', JSON.stringify(messages, null, 2));
         } else {
             logger.error('Failed to ingest messages into Genesys Cloud:', error);
         }

@@ -20,24 +20,24 @@ app.listen(port, () => {
   
   try {
     startInboundPolling();
-    logger.info('✅ Inbound polling started successfully');
+    logger.info('Inbound polling started successfully');
   } catch (error) {
-    logger.error('❌ Failed to start inbound polling:', error);
+    logger.error('Failed to start inbound polling:', error);
   }
   
   try {
     startSocialListening();
-    logger.info('✅ Social listening started successfully');
+    logger.info('Social listening started successfully');
   } catch (error) {
-    logger.error('❌ Failed to start social listening:', error);
+    logger.error('Failed to start social listening:', error);
   }
   
   try {
     startDMPolling();
-    logger.info('✅ DM polling started successfully');
+    logger.info('DM polling started successfully');
   } catch (error) {
-    logger.error('❌ Failed to start DM polling:', error);
+    logger.error('Failed to start DM polling:', error);
   }
   
-  logger.info('🚀 All services initialized');
+  logger.info('All services initialized');
 }); 

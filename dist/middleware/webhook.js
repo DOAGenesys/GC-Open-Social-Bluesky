@@ -52,14 +52,14 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const alreadyProcessed = yield redis_1.redis.get(dedupeKey);
         logger_1.logger.debug(`Deduplication check result for ${id}: ${alreadyProcessed ? 'DUPLICATE' : 'NEW'}`);
         if (alreadyProcessed) {
-            logger_1.logger.warn(`🚫 SKIPPING DUPLICATE webhook message with ID: ${id} (previously processed at: ${alreadyProcessed})`);
+            logger_1.logger.warn(`SKIPPING DUPLICATE webhook message with ID: ${id} (previously processed at: ${alreadyProcessed})`);
             res.status(200).send();
             return;
         }
         // Mark this message as being processed (expires after 1 hour)
         const processingTimestamp = new Date().toISOString();
         yield redis_1.redis.set(dedupeKey, processingTimestamp, { ex: 3600 });
-        logger_1.logger.info(`✅ PROCESSING NEW webhook message ID: ${id} - marked in Redis at ${processingTimestamp}`);
+        logger_1.logger.info(`PROCESSING NEW webhook message ID: ${id} - marked in Redis at ${processingTimestamp}`);
     }
     catch (redisError) {
         logger_1.logger.error(`Redis deduplication failed for message ${id}:`, redisError);

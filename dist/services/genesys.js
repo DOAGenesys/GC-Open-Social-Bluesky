@@ -67,20 +67,29 @@ const getGenesysCloudApiClient = () => {
 };
 exports.getGenesysCloudApiClient = getGenesysCloudApiClient;
 const ingestMessages = (messages) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b, _c, _d, _e;
     const apiClient = (0, exports.getGenesysCloudApiClient)();
     const { GC_SOCIAL_TOPIC_ID, GC_SOCIAL_RULE_ID } = process.env;
     if (!GC_SOCIAL_TOPIC_ID || !GC_SOCIAL_RULE_ID) {
         throw new Error('Missing Genesys Cloud Social Topic or Rule ID in environment variables');
     }
     try {
+        logger_1.logger.debug(`Ingesting ${messages.length} message(s) to Genesys Cloud...`);
+        logger_1.logger.debug(`Using Topic ID: ${GC_SOCIAL_TOPIC_ID}, Rule ID: ${GC_SOCIAL_RULE_ID}`);
         const response = yield apiClient.post(`/api/v2/socialmedia/topics/${GC_SOCIAL_TOPIC_ID}/dataingestionrules/open/${GC_SOCIAL_RULE_ID}/messages/bulk`, messages);
         logger_1.logger.info('Successfully ingested messages into Genesys Cloud');
         return response.data;
     }
     catch (error) {
         if (axios_1.default.isAxiosError(error)) {
-            logger_1.logger.error('Failed to ingest messages into Genesys Cloud:', ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
+            logger_1.logger.error('Failed to ingest messages into Genesys Cloud:', {
+                status: (_a = error.response) === null || _a === void 0 ? void 0 : _a.status,
+                statusText: (_b = error.response) === null || _b === void 0 ? void 0 : _b.statusText,
+                data: (_c = error.response) === null || _c === void 0 ? void 0 : _c.data,
+                url: (_d = error.config) === null || _d === void 0 ? void 0 : _d.url,
+                method: (_e = error.config) === null || _e === void 0 ? void 0 : _e.method
+            });
+            logger_1.logger.error('Request payload that failed:', JSON.stringify(messages, null, 2));
         }
         else {
             logger_1.logger.error('Failed to ingest messages into Genesys Cloud:', error);
