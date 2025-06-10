@@ -17,15 +17,45 @@ const agent = new BskyAgent({
 
 let _isLoggedIn = false;
 
-export const getBlueskyAgent = async (): Promise<BskyAgent> => {
-  if (!_isLoggedIn) {
+const ensureAuthenticated = async (): Promise<void> => {
+  try {
+    // Check if we have a valid session by making a test request
+    if (_isLoggedIn) {
+      try {
+        await agent.getProfile({ actor: BLUESKY_HANDLE });
+        return; // Session is still valid
+      } catch (error: any) {
+        // If we get a 401 or authentication error, we need to re-login
+        if (error.status === 401 || error.error === 'AuthenticationRequired') {
+          logger.warn('Session expired, re-authenticating...');
+          _isLoggedIn = false;
+        } else {
+          throw error; // Re-throw other errors
+        }
+      }
+    }
+
+    // Login with proper handle format
+    const identifier = BLUESKY_HANDLE.includes('.') ? BLUESKY_HANDLE : `${BLUESKY_HANDLE}.bsky.social`;
+    
     await agent.login({
-      identifier: BLUESKY_HANDLE,
+      identifier,
       password: BLUESKY_APP_PASSWORD,
     });
+    
     _isLoggedIn = true;
-    logger.info('Successfully logged into Bluesky');
+    logger.info(`Successfully logged into Bluesky as ${identifier}`);
+  } catch (error: any) {
+    _isLoggedIn = false;
+    if (error.status === 401 || error.error === 'AuthenticationRequired') {
+      throw new Error(`Invalid Bluesky credentials. Please check your BLUESKY_HANDLE (should be like 'username.bsky.social') and BLUESKY_APP_PASSWORD`);
+    }
+    throw error;
   }
+};
+
+export const getBlueskyAgent = async (): Promise<BskyAgent> => {
+  await ensureAuthenticated();
   return agent;
 };
 

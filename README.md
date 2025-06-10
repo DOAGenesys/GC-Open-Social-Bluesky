@@ -15,6 +15,43 @@ The Bluesky-Genesys Cloud Connector is a TypeScript-based middleware designed to
 * **Identity Management:** Maps Bluesky users to Genesys Cloud contacts.
 * **Scalable and Secure:** Designed for reliability and security, with stateless architecture and secure credential management.
 
+## Monitoring Scope
+
+The middleware implements two distinct types of monitoring with different scopes:
+
+### 1. Inbound Notifications (Your Account Only)
+- **What it monitors**: Only activity directed **at your specific Bluesky account**
+- **Includes**: 
+  - Direct mentions of your account (e.g., `@yourcompany.bsky.social`)
+  - Replies to posts made by your account
+- **API Used**: `listNotifications()`
+- **Configuration**: Always enabled, uses `BLUESKY_HANDLE` automatically
+- **Use Case**: Customer service inquiries directed specifically at your brand
+
+### 2. Social Listening (Entire Bluesky Network)
+- **What it monitors**: **All public posts across the entire Bluesky network** that match your search criteria
+- **Includes**: 
+  - Any post by any user containing your search terms
+  - Posts that mention your brand without directly tagging your account
+  - Industry conversations, competitor mentions, general sentiment
+- **API Used**: `searchPosts()`
+- **Configuration**: Requires `BLUESKY_SEARCH_QUERY` environment variable
+- **Use Case**: Brand monitoring, competitive intelligence, proactive customer engagement
+
+**⚠️ Important**: Social listening monitors the **entire Bluesky network**, so be specific with your search terms to avoid overwhelming your agents with irrelevant conversations.
+
+**Example Search Queries**:
+```bash
+# Monitor your brand name
+BLUESKY_SEARCH_QUERY="YourCompanyName"
+
+# Monitor customer service keywords
+BLUESKY_SEARCH_QUERY="customer service OR support OR help"
+
+# Monitor your industry
+BLUESKY_SEARCH_QUERY="#fintech OR #banking OR financial services"
+```
+
 ## Architecture Overview
 
 The middleware consists of the following components:
@@ -133,6 +170,7 @@ The following environment variables are required for the application to function
 | `REDIS_URL` | The connection URL for the Upstash Redis database. | `redis://...` |
 | `REDIS_TOKEN` | The authentication token for the Upstash Redis database. | `your-redis-token` |
 | `LOG_LEVEL` | The logging level for the application (`debug`, `info`, `warn`, `error`). | `info` |
+| `BLUESKY_SEARCH_QUERY` | Search terms for social listening on Bluesky. Uses Bluesky's search syntax. Leave empty to disable social listening. | `"@mycompany OR #support"` |
 | `POLLING_TIME_SOCIAL_LISTENING` | The polling interval in seconds for social listening. Defaults to 300 (5 minutes). | `300` |
 | `POLLING_TIME_INBOUND_NOTIFICATIONS` | The polling interval in seconds for inbound notifications (mentions/replies). Defaults to 60 (1 minute). | `60` |
 
