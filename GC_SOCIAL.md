@@ -68,10 +68,14 @@ URL: /api/v2/externalcontacts/contacts
 Request Body:
 {
   "firstName": "<Bluesky User Display Name>",
-  "lastName": "",
+  "division": {
+    "id": "<Division ID>"
+  },
   "externalIds": [
     {
-      "externalSource": "<External Source ID>",
+      "externalSource": {
+        "id": "<External Source ID>"
+      },
       "value": "<Bluesky User DID>"
     }
   ]
@@ -79,7 +83,10 @@ Request Body:
 
 
 firstName: The display name of the Bluesky user (string, required if available).
-externalIds: Array of external identifiers (required). externalSource must be the ID of the "Bluesky" external source, and value is the Bluesky DID.
+division: Object containing the division ID where the contact will be stored (required).
+externalIds: Array of external identifiers (required). externalSource must be an object with the ID of the "Bluesky" external source, and value is the Bluesky DID.
+
+Note: Do not include empty fields like lastName. Only include fields with actual values to avoid API validation errors.
 
 
 Response: On success, returns the created contact object with an id field (Genesys Cloud contact ID).

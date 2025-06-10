@@ -14,9 +14,9 @@ export interface GenesysCloudMessage {
             lastName?: string;
         };
         time: string;
-        publicMetadata?: {
-            rootId?: string;
-            replyToId?: string;
+        publicMetadata: {
+            rootId: string;
+            replyToId?: string;  // Optional only for non-reply posts
         };
     };
     text: string;
@@ -33,14 +33,16 @@ export const blueskyToGenesys = async (
         throw new Error('Invalid post record');
     }
 
-    const from = {
+    const from: any = {
         nickname: postView.author.handle,
         id: postView.author.did,
         idType: 'Opaque',
         image: postView.author.avatar,
         firstName: postView.author.displayName,
-        lastName: '',
     };
+    
+    // Only include lastName if we have a meaningful value
+    // For consistency with external contact creation, we omit empty fields
 
     const record = postView.record as AppBskyFeedPost.Record;
 
@@ -49,16 +51,16 @@ export const blueskyToGenesys = async (
             messageId: postView.uri,
             from: from,
             time: postView.indexedAt,
+            publicMetadata: record.reply ? {
+                rootId: record.reply.root.uri,
+                replyToId: record.reply.parent.uri,
+            } : {
+                rootId: postView.uri,  // For non-reply posts, root is the post itself
+                // replyToId omitted for non-reply posts
+            }
         },
         text: record.text,
     };
-
-    if (record.reply) {
-        message.channel.publicMetadata = {
-            rootId: record.reply.root.uri,
-            replyToId: record.reply.parent.uri,
-        };
-    }
 
     if (postView.embed) {
         if (AppBskyEmbedImages.isView(postView.embed)) {
