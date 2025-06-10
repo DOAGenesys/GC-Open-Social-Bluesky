@@ -71,7 +71,7 @@ Request Body:
   "lastName": "",
   "externalIds": [
     {
-      "externalSource": "Bluesky",
+      "externalSource": "<External Source ID>",
       "value": "<Bluesky User DID>"
     }
   ]
@@ -79,7 +79,7 @@ Request Body:
 
 
 firstName: The display name of the Bluesky user (string, required if available).
-externalIds: Array of external identifiers (required). externalSource must be "Bluesky", and value is the Bluesky DID.
+externalIds: Array of external identifiers (required). externalSource must be the ID of the "Bluesky" external source, and value is the Bluesky DID.
 
 
 Response: On success, returns the created contact object with an id field (Genesys Cloud contact ID).

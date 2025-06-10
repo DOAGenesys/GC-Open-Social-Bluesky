@@ -125,6 +125,11 @@ export const sendDeliveryReceipt = async (messageId: string, blueskyPostUri: str
 
 export const createOrUpdateExternalContact = async (did: string, displayName: string, handle: string): Promise<any> => {
     const apiClient = getGenesysCloudApiClient();
+    const { GC_EXTERNAL_SOURCE_ID } = process.env;
+
+    if (!GC_EXTERNAL_SOURCE_ID) {
+        throw new Error('Missing GC_EXTERNAL_SOURCE_ID environment variable. This should be the ID of the "Bluesky" external source in Genesys Cloud.');
+    }
 
     const contact = {
         firstName: displayName,
@@ -134,7 +139,7 @@ export const createOrUpdateExternalContact = async (did: string, displayName: st
         },
         externalIds: [
             {
-                externalSource: 'Bluesky',
+                externalSource: GC_EXTERNAL_SOURCE_ID,  // Use the external source ID, not name
                 value: did,
             }
         ],
@@ -178,11 +183,13 @@ export const createOrUpdateExternalContact = async (did: string, displayName: st
         if (axios.isAxiosError(error)) {
             const errorData = error.response?.data;
             
-            // Check for specific error indicating missing external source
+            // Check for specific error indicating missing or invalid external source
             if (error.response?.status === 400 && 
                 (errorData?.message?.includes('malformed') || errorData?.code === 'bad.request')) {
-                logger.error('Failed to create external contact - this is likely because the "Bluesky" external source does not exist in Genesys Cloud.');
-                logger.error('To fix this: Go to Admin > External Contacts > Add Source and create a source named "Bluesky"');
+                logger.error('Failed to create external contact - this is likely because:');
+                logger.error('1. The "Bluesky" external source does not exist in Genesys Cloud, OR');
+                logger.error('2. The GC_EXTERNAL_SOURCE_ID environment variable has an incorrect ID');
+                logger.error('To fix: Verify the external source exists and get its correct ID from Admin > External Contacts > Sources');
                 logger.error('See README.md Step 2.4 for detailed instructions.');
             }
             

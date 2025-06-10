@@ -136,12 +136,20 @@ Before deploying the middleware, you must perform several manual configuration s
 3.  Inside the new Topic, create a new **Open Data Ingestion Rule**. Copy its ID for your `GC_SOCIAL_RULE_ID`.
 4.  Within this rule, you can define **escalation rules** to automatically create ACD conversations when certain criteria are met.
 
-#### 2.4: Configure Identity Resolution
+#### 2.4: Configure External Contacts (Optional)
+
+If you want to track individual customer profiles (`ENABLE_EXTERNAL_CONTACTS=true`):
 
 1.  Navigate to **Admin** > **External Contacts**.
 2.  Click **Add Source** and create a new source named `Bluesky`.
-3.  Navigate back to **Admin** > **Message** > **Identity Resolution**.
-4.  Find your Open Messaging integration and configure it to use the `Bluesky` external source you just created.
+3.  **Important**: After creating the source, click on it to view its details and copy the **Source ID**. This will be your `GC_EXTERNAL_SOURCE_ID` environment variable.
+4.  Navigate to **Admin** > **Message** > **Identity Resolution**.
+5.  Find your Open Messaging integration and configure it to use the `Bluesky` external source you just created.
+
+**Understanding External Contacts vs External Sources:**
+- **External Source**: A single category/source type (like "Bluesky") that you create once in Genesys Cloud
+- **External Contacts**: Individual contact records for each Bluesky user, all linked to the "Bluesky" external source
+- Each unique Bluesky user (identified by their DID) gets their own external contact record for customer tracking
 
 ## Deployment
 
@@ -167,6 +175,7 @@ The following environment variables are required for the application to function
 | `GC_WEBHOOK_SECRET` | The secret token for validating outbound webhooks from Genesys Cloud. | `your-webhook-secret` |
 | `GC_SOCIAL_TOPIC_ID` | The ID of the Social Listening Topic in Genesys Cloud for ingesting Bluesky posts. | `your-gc-topic-id` |
 | `GC_SOCIAL_RULE_ID` | The ID of the Open Data Ingestion Rule in Genesys Cloud. | `your-gc-rule-id` |
+| `GC_EXTERNAL_SOURCE_ID` | The ID of the "Bluesky" external source in Genesys Cloud (required if `ENABLE_EXTERNAL_CONTACTS=true`). | `your-external-source-id` |
 | `REDIS_URL` | The connection URL for the Upstash Redis database. | `redis://...` |
 | `REDIS_TOKEN` | The authentication token for the Upstash Redis database. | `your-redis-token` |
 | `LOG_LEVEL` | The logging level for the application (`debug`, `info`, `warn`, `error`). | `info` |
@@ -202,16 +211,24 @@ Once the middleware is deployed and running with the correct environment variabl
 
 When `ENABLE_EXTERNAL_CONTACTS=true`, the middleware automatically creates and manages external contacts in Genesys Cloud:
 
-- **Individual Tracking**: Each unique Bluesky user gets their own external contact profile based on their Bluesky DID (Decentralized Identifier)
-- **Profile Data**: Stores the user's display name, handle, and Bluesky DID for identification
-- **Customer History**: Links all posts from the same user to their contact profile for better customer service context and conversation history
-- **Automatic Management**: Creates new contacts when first encountered, updates existing contacts if profile information changes
-- **Optional Feature**: Set `ENABLE_EXTERNAL_CONTACTS=false` to skip contact creation entirely and only process messages without customer tracking
+### How It Works
+- **One External Source**: You create a single "Bluesky" external source in Genesys Cloud (done once)
+- **Many External Contacts**: Each unique Bluesky user gets their own individual contact record
+- **Unique Identification**: Users are identified by their Bluesky DID (Decentralized Identifier), not their handle
 
-This feature is useful for customer service teams who want to:
+### What Gets Stored
+- **Profile Data**: User's display name, handle, and Bluesky DID for identification
+- **Customer History**: All posts from the same user are linked to their contact profile
+- **Automatic Management**: Creates new contacts when first encountered, updates existing contacts if profile information changes
+
+### Benefits for Customer Service
 - Track interaction history with specific users across multiple posts and conversations
 - Build customer profiles and context for better service delivery
 - Identify repeat customers or frequent posters
 - Maintain continuity in customer relationships across different service interactions
 
-**Note**: Each Bluesky user is uniquely identified by their DID (not their handle), ensuring accurate tracking even if users change their display names or handles.
+### Configuration
+- **Required**: Set `GC_EXTERNAL_SOURCE_ID` to the ID of your "Bluesky" external source
+- **Optional Feature**: Set `ENABLE_EXTERNAL_CONTACTS=false` to skip contact creation entirely
+
+**Important**: Each Bluesky user is uniquely identified by their DID (not their handle), ensuring accurate tracking even if users change their display names or handles.
