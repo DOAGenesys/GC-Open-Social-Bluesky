@@ -30,6 +30,7 @@ The middleware will periodically fetch new posts from Bluesky to be ingested int
 - **Mentions**: Fetching notifications to identify when the authenticated user is mentioned. The listNotifications method will be used for this.
 - **Author Feeds**: Monitoring the authenticated user's own feed for new posts and replies using getAuthorFeed.
 - **Custom Feeds/Social Listening**: For social listening use cases, the middleware will fetch posts from specific feed generators (getFeed) or search for posts matching certain criteria (searchPosts).
+- **Direct Message Monitoring**: The middleware polls for new direct messages using Python's `atproto` library (since TypeScript SDK doesn't support chat APIs).
 
 ### 2.2. Post Ingestion
 
@@ -143,6 +144,30 @@ const result = execSync(`python "${pythonScript}" "${recipientDid}" "${text}"`, 
 - Direct messaging requires the App Password to have "Direct Messages" scope enabled
 - Python 3.x with `atproto==0.0.55` library installed (`pip install atproto==0.0.55`)
 - Same environment variables (`BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD`) are used by both TypeScript and Python components
+
+### 3.6. Direct Message Polling (Inbound DMs)
+
+**⚠️ Also uses Python**: The middleware polls for incoming direct messages using a Python script (`src/services/bluesky_dm_poll.py`) because TypeScript SDK doesn't support chat APIs.
+
+**How it works**:
+- Polls all conversations for new messages every 2 minutes (configurable via `POLLING_TIME_DM`)
+- Filters out messages sent by the bot itself
+- Only processes messages newer than the last polling timestamp
+- Ingests DM responses into Genesys Cloud as private conversations
+- Creates external contacts for DM senders (if enabled)
+
+**Python Implementation**:
+```python
+# Get list of conversations
+convo_list = dm.list_convos()
+
+for convo in convo_list.convos:
+    messages_response = dm.get_messages({'convo_id': convo.id})
+    # Filter for new messages from other users
+    # Ingest into Genesys Cloud
+```
+
+This ensures that when a Bluesky user responds to a DM sent from Genesys Cloud, the agent receives the response in their interface.
 
 ### 3.5. Likes and Reposts from Agents
 

@@ -38,6 +38,15 @@ The middleware implements two distinct types of monitoring with different scopes
 - **Configuration**: Requires `BLUESKY_SEARCH_QUERY` environment variable
 - **Use Case**: Brand monitoring, competitive intelligence, proactive customer engagement
 
+### 3. Direct Message Monitoring (Conversation Responses)
+- **What it monitors**: **Direct message responses to DMs you've sent from Genesys Cloud**
+- **Includes**:
+  - Replies to direct messages sent by agents via Genesys Cloud
+  - New direct messages initiated by Bluesky users to your account
+- **API Used**: Python `atproto` library with `chat.bsky.convo` (TypeScript SDK doesn't support DMs)
+- **Configuration**: Automatically enabled, uses `POLLING_TIME_DM` for polling interval
+- **Use Case**: Customer service follow-ups, private customer conversations
+
 **⚠️ Important**: Social listening monitors the **entire Bluesky network**, so be specific with your search terms to avoid overwhelming your agents with irrelevant conversations.
 
 **Example Search Queries**:
@@ -224,6 +233,7 @@ The following environment variables are required for the application to function
 | `ENABLE_EXTERNAL_CONTACTS` | Whether to create/update external contacts in Genesys Cloud for each Bluesky user. Set to `false` to skip contact creation entirely. | `true` |
 | `POLLING_TIME_SOCIAL_LISTENING` | The polling interval in seconds for social listening. Defaults to 300 (5 minutes). | `300` |
 | `POLLING_TIME_INBOUND_NOTIFICATIONS` | The polling interval in seconds for inbound notifications (mentions/replies). Defaults to 60 (1 minute). | `60` |
+| `POLLING_TIME_DM` | The polling interval in seconds for direct message polling. Defaults to 120 (2 minutes). | `120` |
 
 ## Testing the Integration
 
