@@ -138,8 +138,8 @@ const sendDirectMessage = (text, recipientDid) => __awaiter(void 0, void 0, void
     const { execSync } = require('child_process');
     const path = require('path');
     try {
-        // Path to the Python script
-        const pythonScript = path.join(__dirname, 'bluesky_dm.py');
+        // Path to the Python script (resolve from project root, not dist folder)
+        const pythonScript = path.join(process.cwd(), 'src', 'services', 'bluesky_dm.py');
         // Execute the Python script with recipient DID and message text as arguments
         const result = execSync(`python "${pythonScript}" "${recipientDid}" "${text}"`, {
             encoding: 'utf8',
