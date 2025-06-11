@@ -53,10 +53,7 @@ The middleware implements distinct types of monitoring with different scopes:
 BLUESKY_SEARCH_QUERY="YourCompanyName"
 
 # Monitor customer service keywords
-BLUESKY_SEARCH_QUERY="customer service OR support OR help"
-
-# Monitor your industry
-BLUESKY_SEARCH_QUERY="#fintech OR #banking OR financial services"
+BLUESKY_SEARCH_QUERY="customer service"
 ```
 
 ## Architecture Overview
