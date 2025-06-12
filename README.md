@@ -232,7 +232,8 @@ The following environment variables are required for the application to function
 | `GC_CC_CLIENT_ID` | The Client ID for the Genesys Cloud OAuth Client Credentials grant. | `your-gc-client-id` |
 | `GC_CC_CLIENT_SECRET` | The Client Secret for the Genesys Cloud OAuth Client Credentials grant. | `your-gc-client-secret` |
 | `GC_INTEGRATION_ID` | The ID of the Open Messaging integration in Genesys Cloud. | `your-gc-integration-id` |
-| `GC_WEBHOOK_SECRET` | The secret token for validating outbound webhooks from Genesys Cloud. | `your-webhook-secret` |
+| `GC_WEBHOOK_SECRET` | The secret token for validating outbound webhooks from Genesys Cloud. You can get it when configuring the Open Messaging platform on Genesys Cloud ("Outbound Notification Webhook Signature Secret Token
+" | `your-webhook-secret` |
 | `GC_SOCIAL_TOPIC_ID` | The ID of the Social Listening Topic in Genesys Cloud for ingesting Bluesky posts. | `your-gc-topic-id` |
 | `GC_SOCIAL_RULE_ID` | The ID of the Open Data Ingestion Rule in Genesys Cloud. | `your-gc-rule-id` |
 | `GC_EXTERNAL_SOURCE_ID` | The ID of the "Bluesky" external source in Genesys Cloud (required if `ENABLE_EXTERNAL_CONTACTS=true`). | `your-external-source-id` |
