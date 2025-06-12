@@ -121,18 +121,38 @@ The database is not an optional add-on; it's a core architectural component. Her
 *   **The Problem:** Both Bluesky and Genesys Cloud enforce API rate limits. Polling for all historical posts on every startup is inefficient and risks hitting these limits.
 *   **The Solution:** The database can store a timestamp or a cursor from the last successful polling operation. On restart, the middleware can query Bluesky only for posts created *after* this point, making the process significantly more efficient and ensuring it stays well within API rate limits.
 
+### 6. Example DB setup on upstash
+
+*   **Account:** Create a free account and then a database:
+  
+![image](https://github.com/user-attachments/assets/8d165443-fda0-46ce-9458-a6e781e87e93)
+
+*   **Properties:** Assign it a name and a region:
+
+  ![image](https://github.com/user-attachments/assets/fb6da156-8c13-4022-8378-c008ef61accf)
+
+
+*   **Final steps:** Select a plan and create the db. Then get the https URL and the token, you will be needing those to set the REDIS_URL & REDIS_TOKEN env vars on your server (DigitalOcean or similar)
+
+![image](https://github.com/user-attachments/assets/e0e1b2f1-0c9d-41e0-afba-74effe5cd681)
+
+
+
 ## Pre-deployment Configuration
 
 Before deploying the middleware, you must perform several manual configuration steps in both Bluesky and Genesys Cloud to gather the required environment variables.
 
 ### Step 1: Bluesky Configuration
 
-1.  **Create App Password:**
-    * Log in to the Bluesky account you want to integrate.
+1.  **Create an integration account with an App Password:**
+    * Create and log in to the Bluesky account you want to use as the integration account.
     * Navigate to **Settings** > **App Passwords**.
     * Click **Add App Password**, give it a descriptive name (e.g., `genesys-cloud-middleware`), and click **Create**.
     * Copy the generated password. This will be your `BLUESKY_APP_PASSWORD`. **You will not see this password again.**
     * The handle of this account (e.g., `my-company.bsky.social`) will be your `BLUESKY_HANDLE`.
+  
+2.  **Create a customer account:**
+    * Create a customer account that you will use to test the integration. This is where you will interact with Genesys Cloud agents from, by submitting public posts, replies or DMs.
 
 ### Step 2: Genesys Cloud Configuration
 
@@ -187,34 +207,6 @@ If you want to track individual customer profiles (`ENABLE_EXTERNAL_CONTACTS=tru
 - **External Contacts**: Individual contact records for each Bluesky user, all linked to the "Bluesky" external source
 - Each unique Bluesky user (identified by their DID) gets their own external contact record for customer tracking
 
-## Setup Requirements
-
-This application requires both **Node.js/TypeScript** and **Python** to run:
-
-### Node.js/TypeScript (Main Application)
-- Node.js 18+
-- All TypeScript dependencies are installed via `npm install`
-
-### Python (Direct Messaging Only)
-**⚠️ Critical Requirement**: The application uses Python for Bluesky direct message functionality because:
-- **The TypeScript `@atproto/api` SDK does NOT support Bluesky's chat/DM APIs**
-- **Only the Python `atproto` library has full direct messaging support**
-
-This is not optional - **Python is required for the DM feature to work**.
-
-**Install Python dependencies:**
-```bash
-pip install atproto==0.0.55
-```
-
-Or use the npm script:
-```bash
-npm run python-setup
-```
-
-**Python Requirements File:**
-The `requirements.txt` file contains the specific Python library version needed.
-
 ## Deployment
 
 This application is designed to be deployed on the **DigitalOcean App Platform**. In case you don't have a DigitalOcean account, you can get one here with $200 free credits:
@@ -245,7 +237,7 @@ The following environment variables are required for the application to function
 | `GC_SOCIAL_RULE_ID` | The ID of the Open Data Ingestion Rule in Genesys Cloud. | `your-gc-rule-id` |
 | `GC_EXTERNAL_SOURCE_ID` | The ID of the "Bluesky" external source in Genesys Cloud (required if `ENABLE_EXTERNAL_CONTACTS=true`). | `your-external-source-id` |
 | `GC_EC_DIVISION_ID` | The ID of the division for external contacts in Genesys Cloud (required if `ENABLE_EXTERNAL_CONTACTS=true`). | `your-division-id` |
-| `REDIS_URL` | The connection URL for the Upstash Redis database. | `redis://...` |
+| `REDIS_URL` | The connection URL for the Upstash Redis database. | `https://...` |
 | `REDIS_TOKEN` | The authentication token for the Upstash Redis database. | `your-redis-token` |
 | `LOG_LEVEL` | The logging level for the application (`debug`, `info`, `warn`, `error`). | `info` |
 | `BLUESKY_SEARCH_QUERY` | Search terms for social listening on Bluesky. Uses Bluesky's search syntax. Leave empty to disable social listening. | `"@mycompany OR #support"` |
