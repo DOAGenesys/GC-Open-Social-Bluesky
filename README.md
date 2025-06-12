@@ -121,7 +121,7 @@ The database is not an optional add-on; it's a core architectural component. Her
 *   **The Problem:** Both Bluesky and Genesys Cloud enforce API rate limits. Polling for all historical posts on every startup is inefficient and risks hitting these limits.
 *   **The Solution:** The database can store a timestamp or a cursor from the last successful polling operation. On restart, the middleware can query Bluesky only for posts created *after* this point, making the process significantly more efficient and ensuring it stays well within API rate limits.
 
-### 6. Example DB setup on upstash
+### 6. Example DB setup on upstash (https://upstash.com)
 
 *   **Account:** Create a free account and then a database:
   
