@@ -172,8 +172,8 @@ Before deploying the middleware, you must perform several manual configuration s
 
 #### 2.2: Create Open Messaging Integration
 
-1.  Navigate to **Admin** > **Message** > **Integrations**.
-2.  Click **+ New Integration** and select **Open Messaging**.
+1.  Navigate to **Admin** > **Message** > **Platforms**.
+2.  Click **+ New** and select **Open Messaging**.
 3.  Give it a name (e.g., `Bluesky Integration`) and click **Save**.
 4.  In the integration's configuration page, copy the **Integration ID**. This is your `GC_INTEGRATION_ID`.
 5.  Scroll down to the **Outbound** section and find the **Outbound Webhook Signature Secret Token**. Click **View** and copy the token. This is your `GC_WEBHOOK_SECRET`.
