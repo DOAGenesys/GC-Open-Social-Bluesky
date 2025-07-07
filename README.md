@@ -201,6 +201,16 @@ If you want to track individual customer profiles (`ENABLE_EXTERNAL_CONTACTS=tru
     - Navigate to **Admin** > **Organization** > **Divisions**
     - Find the division where you want to store external contacts (usually "Home" or your main division)
     - Copy the **Division ID** - this will be your `GC_EC_DIVISION_ID` environment variable
+  
+
+#### 2.6: Configure Platform Outbound Webhook URL
+
+This MUST be done after the DigitalOcean deployment is finished (see next section) and you get your DigitalOcean app URL.
+
+1.  Navigate to **Admin** > **Message** > **Platforms**, and edit the Platform you created previously. Edit the Outbound Notification Webhook URL with https://<DigitalOcean_App_Domain>/webhook, for example:
+
+![image](https://github.com/user-attachments/assets/5ae6e632-0657-477d-96cb-838e6630d510)
+
 
 **Understanding External Contacts vs External Sources:**
 - **External Source**: A single category/source type (like "Bluesky") that you create once in Genesys Cloud
