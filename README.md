@@ -211,12 +211,6 @@ This MUST be done after the DigitalOcean deployment is finished (see next sectio
 
 ![image](https://github.com/user-attachments/assets/5ae6e632-0657-477d-96cb-838e6630d510)
 
-
-**Understanding External Contacts vs External Sources:**
-- **External Source**: A single category/source type (like "Bluesky") that you create once in Genesys Cloud
-- **External Contacts**: Individual contact records for each Bluesky user, all linked to the "Bluesky" external source
-- Each unique Bluesky user (identified by their DID) gets their own external contact record for customer tracking
-
 ## Deployment
 
 This application is designed to be deployed on the **DigitalOcean App Platform**. In case you don't have a DigitalOcean account, you can get one here with $200 free credits:
@@ -258,6 +252,11 @@ The following environment variables are required for the application to function
 
 
 ## External Contacts Integration
+
+**Understanding External Contacts vs External Sources:**
+- **External Source**: A single category/source type (like "Bluesky") that you create once in Genesys Cloud
+- **External Contacts**: Individual contact records for each Bluesky user, all linked to the "Bluesky" external source
+- Each unique Bluesky user (identified by their DID) gets their own external contact record for customer tracking
 
 When `ENABLE_EXTERNAL_CONTACTS=true`, the middleware automatically creates and manages external contacts in Genesys Cloud:
 
