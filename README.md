@@ -1,4 +1,4 @@
-# Bluesky-Genesys Cloud Connector
+![image](https://github.com/user-attachments/assets/d2f74c8c-4be0-4550-9f4c-59aa3ce94805)# Bluesky-Genesys Cloud Connector
 
 This middleware application provides a seamless integration between the Bluesky social media platform and the Genesys Cloud contact center solution. It allows organizations to manage their Bluesky presence as a customer service channel directly within Genesys Cloud.
 
@@ -178,14 +178,24 @@ Before deploying the middleware, you must perform several manual configuration s
 4.  In the integration's configuration page, copy the **Integration ID**. This is your `GC_INTEGRATION_ID`.
 5.  Scroll down to the **Outbound** section and find the **Outbound Webhook Signature Secret Token**. Click **View** and copy the token. This is your `GC_WEBHOOK_SECRET`.
 
-#### 2.3: Set Up Social Listening
+#### 2.3: Set Up Social Listening (which public posts to monitor)
 
-1.  Navigate to **Admin** > **Social Media**.
+1.  Navigate to **Admin** > **Social Listening**.
 2.  Create a new **Topic** (e.g., `Bluesky Mentions`). Copy its ID for your `GC_SOCIAL_TOPIC_ID`.
 3.  Inside the new Topic, create a new **Open Data Ingestion Rule**. Copy its ID for your `GC_SOCIAL_RULE_ID`.
-4.  Within this rule, you can define **escalation rules** to automatically create ACD conversations when certain criteria are met.
+4.  When setting the DigitalOcean deployment at the next section, you will define exactly which keywords to use for listening/monitoring by setting the `BLUESKY_SEARCH_QUERY` environment variable.
 
-#### 2.4: Configure External Source
+#### 2.4: Set Up Social Escalation (from all the monitored posts, which ones will be escalated to an architect flow*)
+
+1.  Navigate to **Admin** > **Social Escalation Rules**.
+2.  Create a new **Rule** containing simple keywords. Have into account that keywords in here must be same or more specific than the keywords used for Social Listening (to be set in the next section, by setting the `BLUESKY_SEARCH_QUERY` environment variable). Social escalation posts are a subset (same size or smaller) of the monitored posts set.
+
+![image](https://github.com/user-attachments/assets/c61dbcfa-de8a-4536-b1e4-c3358a77d733)
+
+* Remember that for escalation to work, you need also to point to Platform to an active Architect flow, in **Admin** > **Message Routing**. In the architect flow ("Inbound Message Flow" type) you just need a "Transfer to ACD" action to a queue your GC user is member of. When testing escalation, remember to set the status of your GC user to On Queue.
+
+
+#### 2.5: Configure External Source
 
 1.  **Create External Source**:
     - Navigate to **Admin** > **External Sources**
@@ -193,7 +203,7 @@ Before deploying the middleware, you must perform several manual configuration s
     - After creating the source, click on it to view its details and copy the **Source ID**
     - This will be your `GC_EXTERNAL_SOURCE_ID` environment variable
 
-#### 2.5: Configure External Contacts (Optional)
+#### 2.6: Configure External Contacts (Optional)
 
 If you want to track individual customer profiles (`ENABLE_EXTERNAL_CONTACTS=true`):
 
@@ -203,7 +213,7 @@ If you want to track individual customer profiles (`ENABLE_EXTERNAL_CONTACTS=tru
     - Copy the **Division ID** - this will be your `GC_EC_DIVISION_ID` environment variable
   
 
-#### 2.6: Configure Platform Outbound Webhook URL
+#### 2.7: Configure Platform Outbound Webhook URL
 
 This MUST be done after the DigitalOcean deployment is finished (see next section) and you get your DigitalOcean app URL.
 
