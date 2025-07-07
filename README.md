@@ -190,7 +190,7 @@ Before deploying the middleware, you must perform several manual configuration s
 1.  Navigate to **Admin** > **Social Escalation Rules**.
 2.  Create a new **Rule** containing simple keywords. Have into account that keywords in here must be same or more specific than the keywords used for Social Listening (to be set in the next section, by setting the `BLUESKY_SEARCH_QUERY` environment variable). Social escalation posts are a subset (same size or smaller) of the monitored posts set.
 
-![image](https://github.com/user-attachments/assets/c61dbcfa-de8a-4536-b1e4-c3358a77d733)
+![image](https://github.com/user-attachments/assets/6afe7349-cef6-4d46-b46a-76fb0f727d71)
 
 * Remember that for escalation to work, you need also to point to Platform to an active Architect flow, in **Admin** > **Message Routing**. In the architect flow ("Inbound Message Flow" type) you just need a "Transfer to ACD" action to a queue your GC user is member of. When testing escalation, remember to set the status of your GC user to On Queue.
 
