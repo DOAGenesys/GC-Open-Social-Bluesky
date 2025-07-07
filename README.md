@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/d2f74c8c-4be0-4550-9f4c-59aa3ce94805)# Bluesky-Genesys Cloud Connector
+# Bluesky-Genesys Cloud Connector
 
 This middleware application provides a seamless integration between the Bluesky social media platform and the Genesys Cloud contact center solution. It allows organizations to manage their Bluesky presence as a customer service channel directly within Genesys Cloud.
 
