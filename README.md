@@ -146,7 +146,7 @@ Before deploying the middleware, you must perform several manual configuration s
 
 1.  **Create an integration account with an App Password:**
     * Create and log in to the Bluesky account you want to use as the integration account.
-    * Navigate to **Settings** > **App Passwords**.
+    * Navigate to **Settings** > **Privacy & Security** >  **App Passwords**.
     * Click **Add App Password**, give it a descriptive name (e.g., `genesys-cloud-middleware`), and click **Create**.
     * Copy the generated password. This will be your `BLUESKY_APP_PASSWORD`. **You will not see this password again.**
     * The handle of this account (e.g., `my-company.bsky.social`) will be your `BLUESKY_HANDLE`.
