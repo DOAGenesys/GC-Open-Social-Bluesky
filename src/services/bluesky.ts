@@ -1,6 +1,6 @@
 import { BskyAgent } from '@atproto/api';
 import dotenv from 'dotenv';
-import { getConversationState } from './redis';
+import { getConversationState, redis } from './redis';
 import { logger } from './logger';
 
 dotenv.config();
@@ -17,17 +17,67 @@ const agent = new BskyAgent({
 
 let _isLoggedIn = false;
 
+// Redis key for storing the session
+const SESSION_REDIS_KEY = 'bluesky:session:typescript';
+
+/**
+ * Store the current session in Redis for persistence across restarts
+ */
+const storeSessionInRedis = async (): Promise<void> => {
+  try {
+    if (agent.session) {
+      const sessionData = {
+        accessJwt: agent.session.accessJwt,
+        refreshJwt: agent.session.refreshJwt,
+        handle: agent.session.handle,
+        did: agent.session.did,
+        email: agent.session.email,
+        emailConfirmed: agent.session.emailConfirmed,
+        active: agent.session.active,
+      };
+      // Store with 24 hour TTL
+      await redis.set(SESSION_REDIS_KEY, JSON.stringify(sessionData), { ex: 86400 });
+      logger.debug('Session stored in Redis successfully');
+    }
+  } catch (error) {
+    logger.warn('Failed to store session in Redis:', error);
+  }
+};
+
+/**
+ * Retrieve stored session from Redis
+ */
+const getStoredSession = async (): Promise<any | null> => {
+  try {
+    const stored = await redis.get(SESSION_REDIS_KEY);
+    if (stored && typeof stored === 'string') {
+      return JSON.parse(stored);
+    }
+    if (stored && typeof stored === 'object') {
+      return stored;
+    }
+  } catch (error) {
+    logger.warn('Failed to retrieve session from Redis:', error);
+  }
+  return null;
+};
+
 const ensureAuthenticated = async (): Promise<void> => {
   try {
-    // Check if we have a valid session by making a test request
-    if (_isLoggedIn) {
+    // First check if we already have a valid in-memory session
+    if (_isLoggedIn && agent.session) {
       try {
         await agent.getProfile({ actor: BLUESKY_HANDLE });
         return; // Session is still valid
       } catch (error: any) {
+        // Check if it's a rate limit error - don't try to re-login if rate limited
+        if (error.status === 429 || error.error === 'RateLimitExceeded') {
+          logger.error('Rate limited by Bluesky. Cannot authenticate. Please wait for rate limit reset.');
+          throw error; // Re-throw rate limit errors
+        }
         // If we get a 401 or authentication error, we need to re-login
         if (error.status === 401 || error.error === 'AuthenticationRequired') {
-          logger.warn('Session expired, re-authenticating...');
+          logger.warn('Session expired, will try to re-authenticate...');
           _isLoggedIn = false;
         } else {
           throw error; // Re-throw other errors
@@ -35,7 +85,45 @@ const ensureAuthenticated = async (): Promise<void> => {
       }
     }
 
-    // Login with proper handle format
+    // Try to restore session from Redis (useful after process restart)
+    if (!_isLoggedIn) {
+      const storedSession = await getStoredSession();
+      if (storedSession) {
+        try {
+          logger.info('Attempting to restore session from Redis...');
+          // Resume the session using stored tokens
+          await agent.resumeSession({
+            accessJwt: storedSession.accessJwt,
+            refreshJwt: storedSession.refreshJwt,
+            handle: storedSession.handle,
+            did: storedSession.did,
+            email: storedSession.email,
+            emailConfirmed: storedSession.emailConfirmed,
+            active: storedSession.active ?? true,
+          });
+          
+          // Verify the restored session works
+          await agent.getProfile({ actor: BLUESKY_HANDLE });
+          
+          _isLoggedIn = true;
+          logger.info('Successfully restored session from Redis');
+          
+          // Update the stored session (tokens may have been refreshed)
+          await storeSessionInRedis();
+          return;
+        } catch (restoreError: any) {
+          // Check if it's a rate limit error
+          if (restoreError.status === 429 || restoreError.error === 'RateLimitExceeded') {
+            logger.error('Rate limited by Bluesky while restoring session. Cannot authenticate.');
+            throw restoreError;
+          }
+          logger.warn('Failed to restore session from Redis, will perform fresh login:', restoreError.message);
+        }
+      }
+    }
+
+    // Fresh login required - use sparingly due to 10/day rate limit!
+    logger.info('Performing fresh Bluesky login (limited to 10 per 24 hours)...');
     const identifier = BLUESKY_HANDLE.includes('.') ? BLUESKY_HANDLE : `${BLUESKY_HANDLE}.bsky.social`;
     
     await agent.login({
@@ -45,8 +133,15 @@ const ensureAuthenticated = async (): Promise<void> => {
     
     _isLoggedIn = true;
     logger.info(`Successfully logged into Bluesky as ${identifier}`);
+    
+    // Store the session for future use
+    await storeSessionInRedis();
+    
   } catch (error: any) {
     _isLoggedIn = false;
+    if (error.status === 429 || error.error === 'RateLimitExceeded') {
+      throw new Error('Bluesky rate limit exceeded for login. You can only login 10 times per 24 hours. Please wait until the rate limit resets.');
+    }
     if (error.status === 401 || error.error === 'AuthenticationRequired') {
       throw new Error(`Invalid Bluesky credentials. Please check your BLUESKY_HANDLE (should be like 'username.bsky.social') and BLUESKY_APP_PASSWORD`);
     }
@@ -158,4 +253,4 @@ export const sendDirectMessage = async (text: string, recipientDid: string): Pro
         logger.error('Failed to execute Python DM script:', error);
         throw new Error('Failed to send direct message to Bluesky');
     }
-} 
+}
